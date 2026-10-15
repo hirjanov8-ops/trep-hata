@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Треп Хата</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Шапка профиля -->
+        <header class="header">
+            <div class="user-info">
+                <h2 id="username">Саня Свин</h2>
+                <div class="balance-badge"><span id="hc-balance">45.0</span> HC</div>
+            </div>
+            <div class="aura-badge">✨ Аура: <span id="aura-score">120</span></div>
+        </header>
+
+        <!-- Общий Перс (Кукла) -->
+        <section class="avatar-section">
+            <h3>Общий Перс Хаты</h3>
+            <div class="avatar-preview">
+                <div class="slot head" id="slot-head">Шапка: Нет</div>
+                <div class="slot body" id="slot-body">Штаны: Штаны бомжа</div>
+                <div class="slot acc" id="slot-acc">Аксессуар: Нет</div>
+            </div>
+        </section>
+
+        <!-- Навигация по вкладкам -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('cases')">📦 Кейсы</button>
+            <button class="tab-btn" onclick="switchTab('upgrade')">⚡ Апгрейд</button>
+            <button class="tab-btn" onclick="switchTab('inventory')">🎒 Инвентарь</button>
+        </nav>
+
+        <!-- Вкладка: Кейсы -->
+        <div id="tab-cases" class="tab-content active">
+            <h3>Лутбоксы Хаты</h3>
+            <div class="cases-grid">
+                <div class="case-card">
+                    <h4>Мусорный мешок</h4>
+                    <p>Цена: 2 HC</p>
+                    <button onclick="openCase(2)">Открыть</button>
+                </div>
+                <div class="case-card">
+                    <h4>Пивной ящик</h4>
+                    <p>Цена: 5 HC</p>
+                    <button onclick="openCase(5)">Открыть</button>
+                </div>
+                <div class="case-card">
+                    <h4>Легендарный сундук</h4>
+                    <p>Цена: 10 HC</p>
+                    <button onclick="openCase(10)">Открыть</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка: Апгрейд шмоток -->
+        <div id="tab-upgrade" class="tab-content">
+            <h3>Крафт и Апгрейд Шмота</h3>
+            <p>Закинь шмотку, выбери риск и пытайся апнуть в имбу!</p>
+            <div class="upgrade-box">
+                <select id="upgrade-item-select">
+                    <option value="Выцветшая майка Карася">Выцветшая майка Карася (0.1 HC)</option>
+                    <option value="Проссанные тапки Кирилла">Проссанные тапки Кирилла (0.2 HC)</option>
+                </select>
+                <div class="chances">
+                    <button onclick="tryUpgrade(10)">10%</button>
+                    <button onclick="tryUpgrade(30)">30%</button>
+                    <button onclick="tryUpgrade(50)">50%</button>
+                    <button onclick="tryUpgrade(75)">75%</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка: Инвентарь -->
+        <div id="tab-inventory" class="tab-content">
+            <h3>Твой инвентарь</h3>
+            <div id="inventory-list" class="inventory-grid">
+                <!-- Динамически заполняется -->
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
