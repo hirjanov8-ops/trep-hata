@@ -5,11 +5,11 @@ import sqlite3
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
-from database import DB_NAME, init_db, get_rank_title
+from database import DB_NAME, init_db, register_chat, get_all_chats, ensure_user, get_aura_title, get_hc_rank, generate_claim_code, estimate_custom_task_reward
 
-# ==========================================
-# НАСТРОЙКИ (ВСТАВЬ СВОЙ ТОКЕН И ССЫЛКУ)
-# ==========================================
+# =========================================================================
+# НАСТРОЙКИ (ВСТАВЬ СВОЙ ТОКЕН И ССЫЛКУ GITHUB PAGES)
+# =========================================================================
 TOKEN = "ТУТ_ТВОЙ_ТОКЕН_БОТА_ОТ_BOTFATHER"
 WEBAPP_URL = "https://hirjanov8-ops.github.io/trep-hata/web_app/"
 
@@ -18,222 +18,213 @@ dp = Dispatcher()
 init_db()
 
 PUNISHMENTS = [
-    "🚽 Драит толчок и раковину до блеска в соло без перчаток!",
-    "🍳 Готовит фирменный Омлет Карася на всю хату завтра утром!",
-    "🗑️ Выносит абсолютно весь мусор и пустые бутылки всю следующую неделю!",
-    "🏃‍♂️ Бежит в магаз за Ягерем/Виски/энергетиками в любую погоду по первому зову пацанов!",
-    "🍽️ Моет всю гору посуды и плиту после следующего бухича в одно рыло!",
-    "🤡 Ставит себе статус «Любовница Пня и Птицы» на 48 часов в телеге!"
+    "🚽 Драит туалет и раковину в соло до зеркального блеска без перчаток!",
+    "🍳 Готовит фирменный Омлет Карася на всю хату завтра утром в 8:00!",
+    "🗑️ Выносит весь мусор, коробки и пустые бутылки всю неделю!",
+    "🏃‍♂️ Срывается в магаз за Ягерем / Виски / энергетиками в любую погоду!",
+    "🍽️ Моет всю гору посуды, плиту и сковородки после каждого бухича в одно рыло!",
+    "🤡 Носит позорный статус «🐓 Главный Опущенный Хаты» в телеге 48 часов!"
 ]
 
-def ensure_user(user: types.User):
-    conn = sqlite3.connect(DB_NAME)
-    c = conn.cursor()
-    c.execute("SELECT user_id FROM users WHERE user_id = ?", (user.id,))
-    if not c.fetchone():
-        c.execute(
-            "INSERT INTO users (user_id, username, nickname, hc, aura) VALUES (?, ?, ?, 5.0, 0)",
-            (user.id, user.username or "", user.first_name)
-        )
-        conn.commit()
-    conn.close()
+# --- РЕГИСТРАЦИЯ ЧАТОВ И ПОЛЬЗОВАТЕЛЕЙ ПРИ ЛЮБОМ СООБЩЕНИИ ---
+@dp.message()
+async def middleware_handler(message: types.Message):
+    if message.chat.type in ["group", "supergroup"]:
+        register_chat(message.chat.id, message.chat.title, message.chat.type)
+    if message.from_user:
+        ensure_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
+    if message.text and message.text.startswith("/"):
+        return
 
-# --- ГЛАВНОЕ МЕНЮ И ОБУЧЕНИЕ ---
+# --- /start И ГЛАВНОЕ МЕНЮ ---
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    ensure_user(message.from_user)
-    
-    # Reply-клавиатура, которая передаёт данные из WebApp в бота
+    if message.chat.type in ["group", "supergroup"]:
+        register_chat(message.chat.id, message.chat.title, message.chat.type)
+    ensure_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
+
     rkb = ReplyKeyboardBuilder()
-    rkb.button(
-        text="🔥 ОТКРЫТЬ ТРЕП ХАТУ (Mini App)",
-        web_app=types.WebAppInfo(url=WEBAPP_URL)
-    )
+    rkb.button(text="🔥 ОТКРЫТЬ ТРЕП ХАТУ (Mini App)", web_app=types.WebAppInfo(url=WEBAPP_URL))
     rkb.button(text="📊 Топ Хаты")
     rkb.button(text="📖 Все фишки бота")
     rkb.adjust(1, 2)
 
     ikb = InlineKeyboardBuilder()
-    ikb.button(text="🚀 Запустить Mini App (Из чата)", web_app=types.WebAppInfo(url=WEBAPP_URL))
-    ikb.button(text="🎓 Подробный мануал", callback_data="tutorial_chat")
+    ikb.button(text="🚀 Запустить Mini App", web_app=types.WebAppInfo(url=WEBAPP_URL))
     ikb.adjust(1)
 
     text = (
-        "🏠 **СИСТЕМА «ТРЕП ХАТА v2.0» ЗАПУЩЕНА!**\n\n"
-        "Здарова, бродяга! Это официальный пульт управления вашей хатой (Саня Жиросан, Карась и Кирилл Карлик Джексон).\n"
-        "Стартовый баланс каждого при регистрации: **5.0 HC (ХатаКойнов)**.\n\n"
-        "👇 **Жми кнопку ниже, чтобы пройти регистрацию, одеть своего манекена, покрутить кейсы или сдать квест!**"
+        "🏠 **СИСТЕМА «ТРЕП ХАТА v3.0 PRO» АКТИВИРОВАНА!**\n\n"
+        "Здарова, бродяга! Это пульт управления нашей хатой (Саня Жиросан, Карась, Кирилл Карлик Джексон).\n"
+        "Стартовый баланс: **5.0 HC**.\n"
+        "✨ Теперь Аура реально решает: уйдёшь в минус — станешь опущенным с дебаффами!\n\n"
+        "👇 **Жми кнопку ниже, чтобы запустить приложение, крутить рулетки, одевать манекена Майкла Джексона или создавать задания!**"
     )
     await message.answer(text, reply_markup=rkb.as_markup(resize_keyboard=True), parse_mode="Markdown")
-    await message.answer("Быстрый доступ:", reply_markup=ikb.as_markup())
 
-# --- СПРАВКА ПО ВСЕМ ФИШКАМ ЧАТА ---
+# --- СПРАВКА /help_bot ---
 @dp.message(Command("help_bot"))
 @dp.message(F.text == "📖 Все фишки бота")
 async def cmd_help_bot(message: types.Message):
     text = (
-        "📖 **ПОЛНЫЙ ГАЙД: ЧТО УМЕЕТ БОТ В ЧАТЕ И MINI APP**\n\n"
-        "🔹 **1. Проверка дел (Правда или Пиздёж):**\n"
-        "В Mini App (или командой `/claim`) выбираешь дело: убрался, приготовил омлет Карася, принёс Ягерь/Виски. "
-        "Бот кидает опрос в чат. Достаточно **1 голоса «Правда»** от кента — и ты получаешь **+1..+5 HC** и **Ауру**! "
-        "Если нажали **«Пиздёж»** — с тебя списывают **-3 HC** штрафа!\n\n"
-        "🔹 **2. Личный Манекен, Кейсы и Апгрейд (Внутри Mini App):**\n"
-        "• У каждого свой перс. Выбивай шмотки (*Трусы Карася*, *Цепь Джексона*, *Футболка Жиросана*, *Корона Алхана*) и надевай — они **реально отображаются на манекене**.\n"
-        "• Перед прокрутом кейса видно весь лут внутри.\n"
-        "• В **Апгрейде** ставь шмотку под **10% / 30% / 50% / 75%**. Выиграл — старая пропала, новая появилась. Проиграл — шмотка сгорела нахуй!\n\n"
-        "🔹 **3. Команды для общего чата:**\n"
-        "• `/claim` — Быстро создать опрос о выполненном деле прямо в чате\n"
-        "• `/aura @ник` (или ответом на сообщение) — Накинуть **+10 Ауры** кенту за базар или поступок\n"
-        "• `/shame @ник` (или ответом) — Снять **-5 Ауры** за крысятничество или душноту\n"
-        "• `/split 1500 Закупка еды` — Калькулятор Кирилла: делит чек на троих и даёт тебе +2 HC\n"
-        "• `/top` — Таблица лидеров, балансов, рангов и должников\n"
-        "• `/court` — **Воскресный Суд**: крутит барабан наказаний для тех, у кого баланс меньше 0!"
+        "📖 **МАНУАЛ ПО ТРЕП ХАТЕ v3.0:**\n\n"
+        "1️⃣ **Опросы «Правда или Пиздёж» во всех чатах:**\n"
+        "Когда ты заявляешь дело в Mini App или через `/claim`, бот рассылает опрос **во все чаты хаты**. Чтобы задание засчиталось, нужно **ровно 2 голоса «Правда»** от соседей (сам за себя голосовать нельзя). После 2 голосов выдаётся Пин-код!\n\n"
+        "2️⃣ **Система Ауры и Опущенных:**\n"
+        "За добрые дела получаешь Ауру. Если Аура уходит в `< 0`, ты получаешь статус **«🐓 Опущенный»** (кейсы дороже на 25%, шанс апгрейда режется). Поднять ауру можно через `/aura @ник`.\n\n"
+        "3️⃣ **Калькулятор сплита (`/split`):**\n"
+        "Вбиваешь `/split 1800 Пиво и закупка` — бот делит сумму на троих (по 600 ₽ с каждого кента) и начисляет тебе +2 HC.\n\n"
+        "4️⃣ **Рулетки, 50+ шмоток и Фулл Сет Майкла Джексона:**\n"
+        "В Mini App крути Ежедневные и Еженедельные рулетки (с шансом 0.15% выпадения ультра-приза за 50 HC), открывай кейсы с пачками койнов, крафти шмот в апгрейде 10/30/50/75% с круговой анимацией и одевай манекена!"
     )
     await message.answer(text, parse_mode="Markdown")
 
-@dp.callback_query(F.data == "tutorial_chat")
-async def cb_tutorial(call: types.CallbackQuery):
-    await cmd_help_bot(call.message)
-    await call.answer()
-
-# --- БЫСТРОЕ СОЗДАНИЕ ЗАДАНИЯ В ЧАТЕ (/claim) ---
+# --- СОЗДАНИЕ ОПРОСА ЧЕРЕЗ /claim ---
 @dp.message(Command("claim"))
 async def cmd_claim(message: types.Message):
-    ensure_user(message.from_user)
-    ikb = InlineKeyboardBuilder()
-    tasks = [
-        ("🍳 Приготовил Омлет Карася (+3 HC)", "task_omlet_3_15"),
-        ("🧹 Убрался в хате / Вынес мусор (+2 HC)", "task_clean_2_10"),
-        ("🍽️ Помыл всю гору посуды (+2 HC)", "task_dishes_2_10"),
-        ("🦌 Купил Ягерь / Виски пацанам (+5 HC)", "task_alko_5_25"),
-        ("🛒 Сгонял за продуктами в магаз (+3 HC)", "task_shop_3_15"),
-        ("💰 Заработал больше всех за смену (+4 HC)", "task_work_4_20"),
-    ]
-    for title, cb in tasks:
-        ikb.button(text=title, callback_data=cb)
-    ikb.adjust(1)
-    await message.answer(
-        f"⚡ **{message.from_user.first_name}**, выбери, что ты реально сделал (пацаны проверят):",
-        reply_markup=ikb.as_markup(),
-        parse_mode="Markdown"
-    )
-
-@dp.callback_query(F.data.startswith("task_"))
-async def cb_create_poll(call: types.CallbackQuery):
-    parts = call.data.split("_")
-    code, reward, aura = parts[1], float(parts[2]), int(parts[3])
-    titles = {
-        "omlet": "Приготовил фирменный Омлет Карася 🍳",
-        "clean": "Убрался в хате и вынес мусор 🧹",
-        "dishes": "Помыл всю посуду и плиту 🍽️",
-        "alko": "Купил Ягерь / Виски / подгон на хату 🦌🥃",
-        "shop": "Сгонял в магаз за продуктами 🛒",
-        "work": "Отработал смену и занёс бабки в общак 💰"
-    }
-    task_title = titles.get(code, "Выполнил дело по хате")
-    user = call.from_user
-    ensure_user(user)
+    ensure_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
+    parts = message.text.split(maxsplit=1)
+    
+    if len(parts) < 2:
+        return await message.answer(
+            "📋 **Как создать задание:**\n"
+            "Напиши так: `/claim Сгонял в магазин за шавухой и энергетиками`\n"
+            "Бот сам оценит сложность, выдаст цену в HC и Ауру, и разошлет опрос во все чаты!",
+            parse_mode="Markdown"
+        )
+    
+    task_desc = parts[1]
+    reward, aura = estimate_custom_task_reward(task_desc)
+    user = message.from_user
 
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute(
         "INSERT INTO polls (creator_id, creator_name, task_title, reward, aura_bonus) VALUES (?, ?, ?, ?, ?)",
-        (user.id, user.first_name, task_title, reward, aura)
+        (user.id, user.first_name, task_desc, reward, aura)
     )
     poll_id = c.lastrowid
     conn.commit()
     conn.close()
 
+    chats = get_all_chats()
     ikb = InlineKeyboardBuilder()
     ikb.button(text=f"✅ Правда (+{reward:g} HC)", callback_data=f"vote_yes_{poll_id}")
-    ikb.button(text="❌ Пиздёж (-3 HC штраф)", callback_data=f"vote_no_{poll_id}")
+    ikb.button(text="❌ Пиздёж (-3 HC)", callback_data=f"vote_no_{poll_id}")
     ikb.adjust(2)
 
-    await call.message.edit_text(
-        f"🚨 **ПРОВЕРКА НА ПИЗДЁЖ #{poll_id}** 🚨\n\n"
+    poll_text = (
+        f"🚨 **ПРОВЕРКА ДЕЛА #{poll_id}** 🚨\n\n"
         f"👤 Заявитель: **{user.first_name}**\n"
-        f"📋 Утверждает, что: **{task_title}**\n"
-        f"💎 Награда: **+{reward:g} HC** и **+{aura} Ауры**\n\n"
-        f"*Нужен 1 голос от соседа (сам за себя голосовать не можешь)!*",
-        reply_markup=ikb.as_markup(),
-        parse_mode="Markdown"
+        f"📋 Задача: **{task_desc}**\n"
+        f"💎 Награда: **+{reward:g} HC** | ✨ **+{aura} Ауры**\n\n"
+        f"⚖️ *Нужно ровно 2 голоса «Правда» от соседей (сейчас: 0/2)!*"
     )
-    await call.answer("Опрос отправлен в чат!")
 
+    sent_count = 0
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+
+    for chat_id, title, _ in chats:
+        try:
+            msg = await bot.send_message(chat_id, poll_text, reply_markup=ikb.as_markup(), parse_mode="Markdown")
+            c.execute("INSERT INTO poll_messages (poll_id, chat_id, message_id) VALUES (?, ?, ?)", (poll_id, chat_id, msg.message_id))
+            sent_count += 1
+        except Exception:
+            pass
+
+    conn.commit()
+    conn.close()
+    await message.answer(f"✅ Заявка создана и разослана в {sent_count} чатов хаты! Ждём 2 голоса пацанов.")
+
+# --- ОБРАБОТКА ГОЛОСОВАНИЯ (РОВНО 2 ГОЛОСА + ЗАЩИТА ОТ САМОЛАЙКА) ---
 @dp.callback_query(F.data.startswith("vote_"))
-async def cb_vote_poll(call: types.CallbackQuery):
+async def cb_vote(call: types.CallbackQuery):
     _, decision, poll_id_str = call.data.split("_")
     poll_id = int(poll_id_str)
     voter = call.from_user
-    ensure_user(voter)
+    ensure_user(voter.id, voter.username, voter.first_name)
 
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("SELECT creator_id, creator_name, task_title, reward, aura_bonus, status FROM polls WHERE poll_id = ?", (poll_id,))
+    c.execute("SELECT creator_id, creator_name, task_title, reward, aura_bonus, yes_voters, no_voters, status FROM polls WHERE poll_id = ?", (poll_id,))
     row = c.fetchone()
 
     if not row:
         conn.close()
         return await call.answer("Опрос не найден!", show_alert=True)
 
-    creator_id, creator_name, task_title, reward, aura_bonus, status = row
+    creator_id, creator_name, task_title, reward, aura_bonus, yes_voters_str, no_voters_str, status = row
 
     if status != "pending":
         conn.close()
-        return await call.answer("Этот опрос уже закрыт!", show_alert=True)
+        return await call.answer("Этот опрос уже завершён!", show_alert=True)
 
-    # Проверка: нельзя голосовать за самого себя
     if voter.id == creator_id:
         conn.close()
-        return await call.answer("Хитрожопый? Сам за себя голосовать нельзя, жди Карася или Кирилла!", show_alert=True)
+        return await call.answer("Сам за себя голосовать нельзя, хитрожопый бродяга!", show_alert=True)
+
+    yes_list = [int(x) for x in yes_voters_str.split(",") if x]
+    no_list = [int(x) for x in no_voters_str.split(",") if x]
+
+    if voter.id in yes_list or voter.id in no_list:
+        conn.close()
+        return await call.answer("Ты уже отдал свой голос в этом опросе!", show_alert=True)
 
     if decision == "yes":
-        c.execute("UPDATE polls SET status = 'approved' WHERE poll_id = ?", (poll_id,))
-        c.execute(
-            "UPDATE users SET hc = hc + ?, aura = aura + ?, tasks_done = tasks_done + 1 WHERE user_id = ?",
-            (reward, aura_bonus, creator_id)
-        )
-        c.execute("SELECT hc, aura FROM users WHERE user_id = ?", (creator_id,))
-        new_hc, new_aura = c.fetchone()
-        conn.commit()
-        conn.close()
-
-        await call.message.edit_text(
-            f"✅ **ПОДТВЕРЖДЕНО ПАЦАНАМИ!**\n\n"
-            f"👤 Красавчик: **{creator_name}**\n"
-            f"📋 Дело: **{task_title}**\n"
-            f"⚖️ Подтвердил: **{voter.first_name}**\n"
-            f"💰 Начислено: **+{reward:g} HC** и **+{aura_bonus} Ауры**!\n"
-            f"🏦 Баланс в БД чата: **{new_hc:.1f} HC** | ✨ Аура: **{new_aura}**",
-            parse_mode="Markdown"
-        )
-        await call.answer("Засчитано!")
+        yes_list.append(voter.id)
     else:
-        penalty = 3.0
-        c.execute("UPDATE polls SET status = 'rejected' WHERE poll_id = ?", (poll_id,))
-        c.execute(
-            "UPDATE users SET hc = hc - ?, aura = aura - 15, lies_count = lies_count + 1 WHERE user_id = ?",
-            (penalty, creator_id)
+        no_list.append(voter.id)
+
+    new_yes_str = ",".join(map(str, yes_list))
+    new_no_str = ",".join(map(str, no_list))
+
+    if len(no_list) >= 1:
+        c.execute("UPDATE polls SET status = 'rejected', no_voters = ? WHERE poll_id = ?", (new_no_str, poll_id))
+        c.execute("UPDATE users SET hc = hc - 3.0, aura = aura - 20, lies_count = lies_count + 1 WHERE user_id = ?", (creator_id,))
+        conn.commit()
+
+        result_text = (
+            f"❌ **ПОЙМАН НА ПИЗДЕЖЕ (#{poll_id})!**\n\n"
+            f"🤡 Скаммер: **{creator_name}** ({task_title})\n"
+            f"📉 Сосед проголосовал против: штраф **-3.0 HC** и **-20 Ауры**!"
         )
-        c.execute("SELECT hc, aura FROM users WHERE user_id = ?", (creator_id,))
-        new_hc, new_aura = c.fetchone()
+    elif len(yes_list) >= 2:
+        claim_code = generate_claim_code("HATA")
+        c.execute("UPDATE polls SET status = 'approved', yes_voters = ?, claim_code = ? WHERE poll_id = ?", (new_yes_str, claim_code, poll_id))
+        c.execute("UPDATE users SET hc = hc + ?, aura = aura + ?, tasks_done = tasks_done + 1 WHERE user_id = ?", (reward, aura_bonus, creator_id))
+        conn.commit()
+
+        result_text = (
+            f"✅ **ДЕЛО ОДОБРЕНО ПАЦАНАМИ (#{poll_id})!**\n\n"
+            f"👤 Герой: **{creator_name}**\n"
+            f"📋 Задача: **{task_title}**\n"
+            f"💎 Выплачено: **+{reward:g} HC** и **+{aura_bonus} Ауры**!\n"
+            f"🔑 Пин-код активации: `{claim_code}`"
+        )
+    else:
+        c.execute("UPDATE polls SET yes_voters = ?, no_voters = ? WHERE poll_id = ?", (new_yes_str, new_no_str, poll_id))
         conn.commit()
         conn.close()
+        await call.answer(f"Голос принят! («Правда»: {len(yes_list)}/2)")
+        return
 
-        await call.message.edit_text(
-            f"🚨 **ПОЙМАН НА ПИЗДЕЖЕ!** 🚨\n\n"
-            f"🤡 Скаммер: **{creator_name}** пытался наебать хату ({task_title})!\n"
-            f"🕵️‍♂️ Разоблачил: **{voter.first_name}**\n"
-            f"📉 Штраф: **-{penalty:g} HC** и **-15 Ауры**!\n"
-            f"🏦 Баланс теперь: **{new_hc:.1f} HC** (Если к воскресенью меньше 0 — ждёт Суд!)",
-            parse_mode="Markdown"
-        )
-        await call.answer("Скаммер наказан!")
+    c.execute("SELECT chat_id, message_id FROM poll_messages WHERE poll_id = ?", (poll_id,))
+    msg_rows = c.fetchall()
+    conn.close()
 
-# --- ПРИЁМ ДАННЫХ ИЗ MINI APP (СИНХРОНИЗАЦИЯ И ОПРОСЫ) ---
+    for chat_id, msg_id in msg_rows:
+        try:
+            await bot.edit_message_text(result_text, chat_id=chat_id, message_id=msg_id, parse_mode="Markdown")
+        except Exception:
+            pass
+
+    await call.answer("Голос учтён и итог подведён!")
+
+# --- СИНХРОНИЗАЦИЯ ИЗ MINI APP ---
 @dp.message(F.web_app_data)
 async def handle_webapp_data(message: types.Message):
-    ensure_user(message.from_user)
+    ensure_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
     try:
         data = json.loads(message.web_app_data.data)
     except Exception:
@@ -257,125 +248,99 @@ async def handle_webapp_data(message: types.Message):
         conn.commit()
         conn.close()
 
-        outfit = data.get("outfit", {})
+        aura_title = get_aura_title(aura)
         await message.answer(
             f"🔄 **Профиль синхронизирован с Треп Хатой!**\n\n"
             f"👤 Ник: **{nickname}** ({role})\n"
-            f"💰 Баланс: **{hc:.1f} HC** | ✨ Аура: **{aura}**\n"
-            f"🎩 Голова: *{outfit.get('head', 'Нет')}*\n"
-            f"👓 Лицо: *{outfit.get('face', 'Нет')}*\n"
-            f"👕 Торс: *{outfit.get('body', 'Нет')}*\n"
-            f"🩲 Ноги: *{outfit.get('legs', 'Нет')}*\n"
-            f"⛓️ Аксессуар: *{outfit.get('acc', 'Нет')}*",
+            f"💰 Баланс: **{hc:.1f} HC** | ✨ Аура: **{aura}** ({aura_title})",
             parse_mode="Markdown"
         )
 
-    elif action == "create_task_poll":
-        task_title = data.get("title", "Дело по хате")
-        reward = float(data.get("reward", 2.0))
-        aura = int(data.get("aura", 10))
-
-        conn = sqlite3.connect(DB_NAME)
-        c = conn.cursor()
-        c.execute(
-            "INSERT INTO polls (creator_id, creator_name, task_title, reward, aura_bonus) VALUES (?, ?, ?, ?, ?)",
-            (user.id, user.first_name, task_title, reward, aura)
-        )
-        poll_id = c.lastrowid
-        conn.commit()
-        conn.close()
-
-        ikb = InlineKeyboardBuilder()
-        ikb.button(text=f"✅ Правда (+{reward:g} HC)", callback_data=f"vote_yes_{poll_id}")
-        ikb.button(text="❌ Пиздёж (-3 HC)", callback_data=f"vote_no_{poll_id}")
-        ikb.adjust(2)
-
-        await message.answer(
-            f"📲 **ЗАЯВКА ИЗ MINI APP #{poll_id}**\n\n"
-            f"👤 **{user.first_name}** заявляет: **{task_title}**\n"
-            f"💎 Награда: **+{reward:g} HC** и **+{aura} Ауры**\n\n"
-            f"Пацаны, подтверждаем?",
-            reply_markup=ikb.as_markup(),
-            parse_mode="Markdown"
-        )
-
-# --- СИСТЕМА АУРЫ В ЧАТЕ ---
+# --- СИСТЕМА АУРЫ И ОПУЩЕННЫХ (/aura И /shame) ---
 @dp.message(Command("aura"))
 async def cmd_aura(message: types.Message):
-    ensure_user(message.from_user)
     if not message.reply_to_message:
-        return await message.answer("☝️ Чтобы накинуть **+10 Ауры**, ответь (reply) этой командой `/aura` на сообщение кента!", parse_mode="Markdown")
+        return await message.answer("☝️ Ответь (reply) командой `/aura` на сообщение кента, чтобы накинуть ему +15 Ауры!", parse_mode="Markdown")
     
     target = message.reply_to_message.from_user
     if target.id == message.from_user.id:
-        return await message.answer("Сам себе ауру надрачивать не выйдет, бро 🤡")
-    
-    ensure_user(target)
+        return await message.answer("Сам себе ауру не накрутишь, бродяга 🤡")
+
+    ensure_user(target.id, target.username, target.first_name)
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("UPDATE users SET aura = aura + 10 WHERE user_id = ?", (target.id,))
+    c.execute("UPDATE users SET aura = aura + 15 WHERE user_id = ?", (target.id,))
     c.execute("SELECT aura FROM users WHERE user_id = ?", (target.id,))
     new_aura = c.fetchone()[0]
     conn.commit()
     conn.close()
 
+    status_title = get_aura_title(new_aura)
     await message.answer(
-        f"✨ **{message.from_user.first_name}** выразил респект **{target.first_name}**!\n"
-        f"📈 Аура **{target.first_name}** выросла на **+10** (Всего: **{new_aura} ✨**)",
+        f"✨ **{message.from_user.first_name}** выразил мощный респект **{target.first_name}**!\n"
+        f"📈 Аура выросла до **{new_aura} ✨**\n"
+        f"🎖️ Новый статус: *{status_title}*",
         parse_mode="Markdown"
     )
 
 @dp.message(Command("shame"))
 async def cmd_shame(message: types.Message):
     if not message.reply_to_message:
-        return await message.answer("☝️ Ответь (reply) командой `/shame` на сообщение того, кто насрал в душу или ведёт себя как Пень/Птица!")
+        return await message.answer("☝️ Ответь (reply) командой `/shame` на сообщение того, кто ведет себя как Пень или Птица!")
     
     target = message.reply_to_message.from_user
-    ensure_user(target)
+    ensure_user(target.id, target.username, target.first_name)
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("UPDATE users SET aura = aura - 10 WHERE user_id = ?", (target.id,))
+    c.execute("UPDATE users SET aura = aura - 20 WHERE user_id = ?", (target.id,))
     c.execute("SELECT aura FROM users WHERE user_id = ?", (target.id,))
     new_aura = c.fetchone()[0]
     conn.commit()
     conn.close()
 
+    status_title = get_aura_title(new_aura)
+    warning = " 🐓 **ВНИМАНИЕ: Чел улетел в минус по ауре и стал Опущенным!**" if new_aura < 0 else ""
     await message.answer(
-        f"💩 **{message.from_user.first_name}** опустил ауру **{target.first_name}** на **-10**!\n"
-        f"📉 Текущая аура: **{new_aura} ✨**",
+        f"💩 **{message.from_user.first_name}** опустил ауру **{target.first_name}** на **-20**!\n"
+        f"📉 Текущая аура: **{new_aura} ✨** ({status_title}){warning}",
         parse_mode="Markdown"
     )
 
-# --- СПЛИТТЕР ЧЕКОВ ДЛЯ КИРИЛЛА УМНОГО ---
+# --- КАЛЬКУЛЯТОР СПЛИТА / КАУНТЕР ХАТЫ (/split) ---
 @dp.message(Command("split"))
 async def cmd_split(message: types.Message):
-    ensure_user(message.from_user)
     parts = message.text.split(maxsplit=2)
     if len(parts) < 2:
-        return await message.answer("🧮 **Формат Кирилла Умного:**\nПиши `/split 1500 Продукты и омлет` — бот поделит сумму на троих и даст тебе +2 HC за закупку!", parse_mode="Markdown")
+        return await message.answer(
+            "🧮 **Формула сплита для Кирилла Умного:**\n"
+            "Пиши: `/split 1800 Закупка продуктов на неделю`\n"
+            "Бот разделит сумму на троих и зафиксирует чек!",
+            parse_mode="Markdown"
+        )
     
     try:
         amount = float(parts[1])
     except ValueError:
-        return await message.answer("Сумма должна быть числом! Пример: `/split 1200 Пиво и яйца`", parse_mode="Markdown")
-    
-    desc = parts[2] if len(parts) > 2 else "Общая закупка на хату"
+        return await message.answer("Сумма должна быть числом! Пример: `/split 1500 Пицца`")
+
+    desc = parts[2] if len(parts) > 2 else "Общая закупка"
     per_person = round(amount / 3, 2)
 
+    ensure_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("INSERT INTO expenses (payer_name, amount, description) VALUES (?, ?, ?)", (message.from_user.first_name, amount, desc))
-    c.execute("UPDATE users SET hc = hc + 2, aura = aura + 5 WHERE user_id = ?", (message.from_user.id,))
+    c.execute("INSERT INTO expenses (payer_id, payer_name, amount, description) VALUES (?, ?, ?, ?)", (message.from_user.id, message.from_user.first_name, amount, desc))
+    c.execute("UPDATE users SET hc = hc + 2.0, aura = aura + 10 WHERE user_id = ?", (message.from_user.id,))
     conn.commit()
     conn.close()
 
     await message.answer(
-        f"🧾 **ЧЕК ЗАФИКСИРОВАН (Бухгалтерия Карлика Джексона)**\n\n"
+        f"🧾 **БУХГАЛТЕРИЯ ТРЕП ХАТЫ (Сплит чека)**\n\n"
         f"💳 Оплатил: **{message.from_user.first_name}**\n"
-        f"🛒 Покупка: **{desc}**\n"
-        f"💰 Общая сумма: **{amount:g} ₽**\n"
-        f"➗ **С каждого из остальных двоих по: {per_person:g} ₽** (скинуть {message.from_user.first_name})\n\n"
-        f"🎁 За суету с закупкой **{message.from_user.first_name}** получает **+2 HC** и **+5 Ауры**!",
+        f"🛒 Статья: **{desc}**\n"
+        f"💰 Всего: **{amount:g} ₽**\n"
+        f"➗ **С каждого из двоих соседей по: {per_person:g} ₽**\n\n"
+        f"🎁 За суету с оплатой **{message.from_user.first_name}** получает **+2.0 HC** и **+10 Ауры**!",
         parse_mode="Markdown"
     )
 
@@ -383,53 +348,53 @@ async def cmd_split(message: types.Message):
 @dp.message(Command("top"))
 @dp.message(F.text == "📊 Топ Хаты")
 async def cmd_top(message: types.Message):
-    ensure_user(message.from_user)
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("SELECT nickname, username, role, hc, aura, tasks_done, lies_count FROM users ORDER BY hc DESC, aura DESC")
+    c.execute("SELECT nickname, role, hc, aura, tasks_done, lies_count FROM users ORDER BY hc DESC, aura DESC")
     rows = c.fetchall()
     conn.close()
 
-    text = "🏆 **РЕЙТИНГ ТРЕП ХАТЫ (САМЫЕ ПИЗДАТЫЕ И ЕБУЧИЕ ЛОХИ):**\n\n"
-    for idx, (nick, uname, role, hc, aura, tasks, lies) in enumerate(rows, 1):
-        rank = get_rank_title(hc, aura)
+    text = "🏆 **ДОСКА ПОЧЁТА И ЕБУЧИХ ЛОХОВ ТРЕП ХАТЫ:**\n\n"
+    for idx, (nick, role, hc, aura, tasks, lies) in enumerate(rows, 1):
         medal = "🥇" if idx == 1 else "🥈" if idx == 2 else "🥉" if idx == 3 else "🔸"
+        hc_rank = get_hc_rank(hc, aura)
+        aura_title = get_aura_title(aura)
         text += (
             f"{medal} **{idx}. {nick}** ({role})\n"
             f"   💰 Баланс: **{hc:.1f} HC** | ✨ Аура: **{aura}**\n"
-            f"   🎖️ Уровень: *{rank}*\n"
-            f"   ✅ Дел сделано: {tasks} | 🤡 Спиздел: {lies} раз\n\n"
+            f"   🎖️ Ранг: *{hc_rank}* | Статус: *{aura_title}*\n"
+            f"   ✅ Дел сделано: {tasks} | 🤡 Пиздежа: {lies}\n\n"
         )
     await message.answer(text, parse_mode="Markdown")
 
-# --- ВОСКРЕСНЫЙ СУД (БАРАБАН НАКАЗАНИЙ) ---
+# --- ВОСКРЕСНЫЙ СУД (/court) ---
 @dp.message(Command("court"))
 async def cmd_court(message: types.Message):
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("SELECT user_id, nickname, hc FROM users WHERE hc < 0")
+    c.execute("SELECT nickname, hc, aura FROM users WHERE hc < 0 OR aura < 0")
     debtors = c.fetchall()
     conn.close()
 
     if not debtors:
         return await message.answer(
             "⚖️ **ВОСКРЕСНЫЙ СУД ТРЕП ХАТЫ:**\n\n"
-            "Проверил балансы — сегодня ни одного **Ебучего лоха** с минусовым балансом нет! Все пацаны при койнах, Алхан доволен. 🙏",
+            "Все бродяги при койнах и с положительной аурой! Должников и опущенных нет. Алхан доволен. 🙏",
             parse_mode="Markdown"
         )
 
-    text = "⚖️🔥 **ВОСКРЕСНЫЙ СУД ТРЕП ХАТЫ!** 🔥⚖️\n\nОбнаружены должники с минусовым балансом! Крутим барабан наказаний:\n\n"
-    for uid, nick, hc in debtors:
+    text = "⚖️🔥 **ВОСКРЕСНЫЙ СУД И КОЛЕСО НАКАЗАНИЙ!** 🔥⚖️\n\nОбнаружены должники или персонажи с отрицательной аурой:\n\n"
+    for nick, hc, aura in debtors:
         punish = random.choice(PUNISHMENTS)
         text += (
-            f"💀 Должник: **{nick}** (Баланс: **{hc:.1f} HC**)\n"
-            f"🔨 **Приговор:** {punish}\n\n"
+            f"💀 Бродяга: **{nick}** (Баланс: **{hc:.1f} HC**, Аура: **{aura}**)\n"
+            f"🔨 **Приговор суда:** {punish}\n\n"
         )
-    text += "*После выполнения наказания пацаны могут обнулить долг через `/claim`!*"
+    text += "*Выполняйте наказания или закрывайте долги через `/claim`!*"
     await message.answer(text, parse_mode="Markdown")
 
 async def main():
-    print("🔥 Бот ТРЕП ХАТА v2.0 запущен!")
+    print("🔥 Бот ТРЕП ХАТА v3.0 PRO запущен и готов к работе во всех чатах!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
