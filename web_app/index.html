@@ -1,88 +1,1228 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Треп Хата</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ТРЕП ХАТА v2.0</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --card-border: #2a313c;
+    --accent: #f59e0b;
+    --accent-glow: rgba(245, 158, 11, 0.35);
+    --purple: #8b5cf6;
+    --green: #10b981;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --text: #f3f4f6;
+    --muted: #9ca3af;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 0 0 85px 0;
+    background: radial-gradient(circle at top, #1e1b4b 0%, var(--bg) 45%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+  .container { max-width: 480px; margin: 0 auto; padding: 12px; }
+
+  /* ШАПКА ПРОФИЛЯ */
+  .top-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(22, 27, 34, 0.9);
+    border: 1px solid var(--card-border);
+    border-radius: 16px; padding: 10px 14px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  }
+  .profile-left { display: flex; flex-direction: column; gap: 3px; }
+  .nick-row { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 16px; }
+  .role-tag { font-size: 11px; background: #262f3f; color: #93c5fd; padding: 2px 7px; border-radius: 6px; }
+  .rank-badge { font-size: 12px; color: var(--accent); font-weight: 700; }
+  .balances { display: flex; gap: 8px; align-items: center; }
+  .pill {
+    padding: 6px 10px; border-radius: 12px; font-weight: 800; font-size: 13px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .pill.hc { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; box-shadow: 0 0 12px var(--accent-glow); }
+  .pill.hc.negative { background: linear-gradient(135deg, #ef4444, #991b1b); color: #fff; }
+  .pill.aura { background: rgba(139, 92, 246, 0.2); border: 1px solid var(--purple); color: #ddd6fe; }
+
+  /* СЕКЦИИ ВКЛАДОК */
+  .tab-view { display: none; animation: fadeIn 0.2s ease; }
+  .tab-view.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* КАРТОЧКА МАНЕКЕНА */
+  .mannequin-stage {
+    margin-top: 12px;
+    background: radial-gradient(circle at 50% 35%, #2e1065 0%, #111827 75%);
+    border: 1px solid #374151; border-radius: 20px;
+    padding: 14px; position: relative; text-align: center;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
+  }
+  .stage-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .stage-title { font-size: 13px; font-weight: 700; color: #c4b5fd; text-transform: uppercase; letter-spacing: 0.5px; }
+  .help-btn {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; font-size: 11px; padding: 4px 9px; border-radius: 8px; cursor: pointer;
+  }
+  .mannequin-layout {
+    display: grid; grid-template-columns: 1fr 170px 1fr; align-items: center; gap: 6px;
+  }
+  .slot-col { display: flex; flex-direction: column; gap: 8px; }
+  .equip-slot {
+    background: rgba(17, 24, 39, 0.85);
+    border: 1px dashed #4b5563; border-radius: 12px;
+    padding: 6px; min-height: 62px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--muted); position: relative; cursor: pointer;
+    transition: 0.15s;
+  }
+  .equip-slot.equipped { border-style: solid; border-color: var(--accent); background: rgba(245, 158, 11, 0.08); color: #fff; }
+  .equip-slot svg { width: 28px; height: 28px; margin-bottom: 3px; }
+  .equip-slot .slot-name { font-weight: 700; font-size: 10px; text-align: center; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+  .mannequin-svg-wrap {
+    width: 170px; height: 250px; margin: 0 auto;
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  .mannequin-svg-wrap svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
+
+  /* СЕТКА КЕЙСОВ */
+  .section-h { font-size: 17px; font-weight: 800; margin: 14px 0 8px; display: flex; align-items: center; justify-content: space-between; }
+  .cases-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .case-card {
+    background: linear-gradient(160deg, #1f2937 0%, #111827 100%);
+    border: 1px solid var(--card-border); border-radius: 16px;
+    padding: 12px; text-align: center; cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    position: relative; overflow: hidden;
+  }
+  .case-card:active { transform: scale(0.97); }
+  .case-card:hover { border-color: var(--accent); }
+  .case-svg-box { width: 80px; height: 80px; margin: 0 auto 6px; }
+  .case-title { font-weight: 800; font-size: 14px; margin-bottom: 3px; }
+  .case-sub { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .case-price-btn {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #000; font-weight: 800; font-size: 12px;
+    padding: 6px 12px; border-radius: 10px; display: inline-block;
+  }
+
+  /* АПГРЕЙД */
+  .upgrade-arena {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 18px; padding: 14px; text-align: center; margin-top: 10px;
+  }
+  .wheel-container {
+    width: 190px; height: 190px; margin: 10px auto; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wheel-ring {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: conic-gradient(var(--green) 0% 30%, #27272a 30% 100%);
+    position: relative; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.2);
+  }
+  .wheel-inner {
+    width: 138px; height: 138px; border-radius: 50%;
+    background: #111827; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 2;
+    border: 2px solid #374151;
+  }
+  .wheel-pointer {
+    position: absolute; top: -8px; left: 50%;
+    width: 6px; height: 103px;
+    transform-origin: bottom center;
+    transform: translateX(-50%) rotate(0deg);
+    z-index: 5; pointer-events: none;
+    transition: transform 3.2s cubic-bezier(0.12, 0.8, 0.18, 1);
+  }
+  .wheel-pointer::before {
+    content: ''; display: block; width: 0; height: 0;
+    border-left: 8px solid transparent; border-right: 8px solid transparent;
+    border-top: 16px solid #f59e0b; margin-left: -5px;
+    filter: drop-shadow(0 0 6px #f59e0b);
+  }
+  .upg-slots { display: grid; grid-template-columns: 1fr 30px 1fr; align-items: center; gap: 6px; margin: 12px 0; }
+  .upg-card {
+    background: #111827; border: 1px solid #374151; border-radius: 14px;
+    padding: 10px; min-height: 115px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .upg-card svg { width: 46px; height: 46px; margin-bottom: 4px; }
+  .chance-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0; }
+  .chance-btn {
+    background: #1f2937; border: 1px solid #374151; color: #fff;
+    padding: 8px 0; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer;
+  }
+  .chance-btn.active { background: var(--purple); border-color: #c4b5fd; box-shadow: 0 0 12px rgba(139,92,246,0.4); }
+  .action-btn {
+    width: 100%; padding: 12px; border-radius: 12px; border: none;
+    font-weight: 800; font-size: 15px; cursor: pointer;
+    background: linear-gradient(135deg, #10b981, #059669); color: #fff;
+  }
+  .action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ИНВЕНТАРЬ И ЗАДАНИЯ */
+  .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .item-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 10px; text-align: center; position: relative;
+  }
+  .item-card.rarity-common { border-bottom: 3px solid #9ca3af; }
+  .item-card.rarity-rare { border-bottom: 3px solid #3b82f6; }
+  .item-card.rarity-epic { border-bottom: 3px solid #a855f7; }
+  .item-card.rarity-legendary { border-bottom: 3px solid #f59e0b; background: radial-gradient(circle at top, rgba(245,158,11,0.12), var(--card)); }
+  .item-card svg { width: 52px; height: 52px; margin: 4px auto; }
+  .item-name { font-weight: 800; font-size: 12px; min-height: 30px; display: flex; align-items: center; justify-content: center; }
+  .item-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .item-actions { display: flex; gap: 4px; }
+  .btn-sm { flex: 1; padding: 6px 4px; font-size: 11px; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; }
+  .btn-equip { background: var(--blue); color: #fff; }
+  .btn-sell { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid #ef4444; }
+
+  /* КВЕСТЫ И АЧИВКИ */
+  .task-item {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 12px; margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .task-info h4 { margin: 0 0 4px 0; font-size: 14px; }
+  .task-info p { margin: 0; font-size: 11px; color: var(--muted); }
+  .task-reward-btn {
+    background: linear-gradient(135deg, #f59e0b, #d97706); color: #000;
+    border: none; padding: 8px 11px; border-radius: 10px; font-weight: 800; font-size: 12px;
+    white-space: nowrap; cursor: pointer;
+  }
+  .ach-card {
+    background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 12px; padding: 10px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 10px; opacity: 0.45;
+  }
+  .ach-card.unlocked { opacity: 1; border-color: var(--accent); background: rgba(245, 158, 11, 0.08); }
+  .ach-icon { font-size: 24px; }
+
+  /* НИЖНИЙ ТАББАР */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(13, 17, 23, 0.96); border-top: 1px solid var(--card-border);
+    display: flex; justify-content: space-around; padding: 8px 4px 12px; z-index: 50;
+    backdrop-filter: blur(10px);
+  }
+  .nav-item {
+    background: none; border: none; color: var(--muted);
+    font-size: 11px; font-weight: 700; display: flex; flex-direction: column;
+    align-items: center; gap: 3px; cursor: pointer; flex: 1;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item span.ico { font-size: 18px; }
+
+  /* МОДАЛКИ (КЕЙС, РЕГИСТРАЦИЯ, ОБУЧЕНИЕ) */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.86);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 14px; backdrop-filter: blur(6px);
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #161b22; border: 1px solid #374151; border-radius: 20px;
+    width: 100%; max-width: 430px; padding: 16px; max-height: 90vh; overflow-y: auto;
+    text-align: center; position: relative;
+  }
+  /* ЛЕНТА РУЛЕТКИ КЕЙСА */
+  .roller-viewport {
+    width: 100%; height: 105px; background: #090d16;
+    border: 2px solid var(--accent); border-radius: 14px;
+    margin: 12px 0; position: relative; overflow: hidden;
+  }
+  .roller-center-line {
+    position: absolute; top: 0; bottom: 0; left: 50%; width: 3px;
+    background: #ef4444; transform: translateX(-50%); z-index: 10;
+    box-shadow: 0 0 8px #ef4444;
+  }
+  .roller-track {
+    display: flex; align-items: center; height: 100%;
+    will-change: transform;
+  }
+  .roller-card {
+    min-width: 86px; width: 86px; height: 86px; margin: 0 4px;
+    background: #1f2937; border-radius: 10px; padding: 6px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; flex-shrink: 0;
+  }
+  .roller-card svg { width: 42px; height: 42px; margin-bottom: 3px; }
+  .loot-preview-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    margin: 10px 0; max-height: 210px; overflow-y: auto;
+  }
+  .loot-preview-item {
+    background: #0d1117; border: 1px solid #2a313c; border-radius: 10px;
+    padding: 6px; font-size: 10px; display: flex; flex-direction: column; align-items: center;
+  }
+  .loot-preview-item svg { width: 34px; height: 34px; margin-bottom: 3px; }
+  .input-field {
+    width: 100%; padding: 11px; border-radius: 10px; border: 1px solid #374151;
+    background: #0d1117; color: #fff; font-size: 14px; margin: 8px 0;
+  }
+  .role-selector { display: grid; grid-template-columns: 1fr; gap: 6px; margin: 10px 0; text-align: left; }
+  .role-opt {
+    background: #0d1117; border: 1px solid #374151; border-radius: 10px;
+    padding: 9px 12px; cursor: pointer; font-size: 12px;
+  }
+  .role-opt.selected { border-color: var(--accent); background: rgba(245, 158, 11, 0.12); }
+</style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Шапка профиля -->
-        <header class="header">
-            <div class="user-info">
-                <h2 id="username">Саня Свин</h2>
-                <div class="balance-badge"><span id="hc-balance">45.0</span> HC</div>
-            </div>
-            <div class="aura-badge">✨ Аура: <span id="aura-score">120</span></div>
-        </header>
 
-        <!-- Общий Перс (Кукла) -->
-        <section class="avatar-section">
-            <h3>Общий Перс Хаты</h3>
-            <div class="avatar-preview">
-                <div class="slot head" id="slot-head">Шапка: Нет</div>
-                <div class="slot body" id="slot-body">Штаны: Штаны бомжа</div>
-                <div class="slot acc" id="slot-acc">Аксессуар: Нет</div>
-            </div>
-        </section>
-
-        <!-- Навигация по вкладкам -->
-        <nav class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('cases')">📦 Кейсы</button>
-            <button class="tab-btn" onclick="switchTab('upgrade')">⚡ Апгрейд</button>
-            <button class="tab-btn" onclick="switchTab('inventory')">🎒 Инвентарь</button>
-        </nav>
-
-        <!-- Вкладка: Кейсы -->
-        <div id="tab-cases" class="tab-content active">
-            <h3>Лутбоксы Хаты</h3>
-            <div class="cases-grid">
-                <div class="case-card">
-                    <h4>Мусорный мешок</h4>
-                    <p>Цена: 2 HC</p>
-                    <button onclick="openCase(2)">Открыть</button>
-                </div>
-                <div class="case-card">
-                    <h4>Пивной ящик</h4>
-                    <p>Цена: 5 HC</p>
-                    <button onclick="openCase(5)">Открыть</button>
-                </div>
-                <div class="case-card">
-                    <h4>Легендарный сундук</h4>
-                    <p>Цена: 10 HC</p>
-                    <button onclick="openCase(10)">Открыть</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка: Апгрейд шмоток -->
-        <div id="tab-upgrade" class="tab-content">
-            <h3>Крафт и Апгрейд Шмота</h3>
-            <p>Закинь шмотку, выбери риск и пытайся апнуть в имбу!</p>
-            <div class="upgrade-box">
-                <select id="upgrade-item-select">
-                    <option value="Выцветшая майка Карася">Выцветшая майка Карася (0.1 HC)</option>
-                    <option value="Проссанные тапки Кирилла">Проссанные тапки Кирилла (0.2 HC)</option>
-                </select>
-                <div class="chances">
-                    <button onclick="tryUpgrade(10)">10%</button>
-                    <button onclick="tryUpgrade(30)">30%</button>
-                    <button onclick="tryUpgrade(50)">50%</button>
-                    <button onclick="tryUpgrade(75)">75%</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка: Инвентарь -->
-        <div id="tab-inventory" class="tab-content">
-            <h3>Твой инвентарь</h3>
-            <div id="inventory-list" class="inventory-grid">
-                <!-- Динамически заполняется -->
-            </div>
-        </div>
+<div class="container">
+  <!-- ШАПКА ПРОФИЛЯ -->
+  <div class="top-bar">
+    <div class="profile-left">
+      <div class="nick-row">
+        <span id="ui-nick">Не зареган</span>
+        <span class="role-tag" id="ui-role">Новичок</span>
+      </div>
+      <div class="rank-badge" id="ui-rank">🤡 Дух Треп Хаты</div>
     </div>
-    <script src="app.js"></script>
+    <div class="balances">
+      <div class="pill aura" title="Твоя Аура">✨ <span id="ui-aura">0</span></div>
+      <div class="pill hc" id="hc-pill" title="ХатаКойны">💰 <span id="ui-hc">5.0</span> HC</div>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКА 1: МАНЕКЕН И ПРОФИЛЬ -->
+  <div id="tab-mannequin" class="tab-view active">
+    <div class="mannequin-stage">
+      <div class="stage-header">
+        <span class="stage-title">👕 Твой Личный Манекен</span>
+        <button class="help-btn" onclick="openTutorial()">🎓 Обучение</button>
+      </div>
+
+      <div class="mannequin-layout">
+        <!-- Левые слоты -->
+        <div class="slot-col">
+          <div class="equip-slot" id="slot-box-head" onclick="unequipSlot('head')">
+            <span>🎩 Голова</span>
+            <div class="slot-name" id="slot-name-head">Пусто</div>
+          </div>
+          <div class="equip-slot" id="slot-box-body" onclick="unequipSlot('body')">
+            <span>👕 Торс</span>
+            <div class="slot-name" id="slot-name-body">Пусто</div>
+          </div>
+          <div class="equip-slot" id="slot-box-legs" onclick="unequipSlot('legs')">
+            <span>🩲 Ноги</span>
+            <div class="slot-name" id="slot-name-legs">Пусто</div>
+          </div>
+        </div>
+
+        <!-- ЦЕНТРАЛЬНЫЙ SVG МАНЕКЕН СО СЛОЯМИ ОДЕЖДЫ -->
+        <div class="mannequin-svg-wrap">
+          <svg viewBox="0 0 200 300" id="mannequin-svg">
+            <defs>
+              <radialGradient id="pedestalGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <!-- Неоновый подиум -->
+            <ellipse cx="100" cy="278" rx="68" ry="14" fill="url(#pedestalGrad)"/>
+            <ellipse cx="100" cy="278" rx="52" ry="8" fill="none" stroke="#a855f7" stroke-width="2"/>
+
+            <!-- БАЗОВОЕ ТЕЛО ПЕРСА -->
+            <g id="base-human">
+              <!-- Шея -->
+              <rect x="91" y="75" width="18" height="16" rx="5" fill="#e0ac69"/>
+              <!-- Торс и руки -->
+              <rect x="65" y="88" width="70" height="84" rx="16" fill="#f1c27d"/>
+              <rect x="44" y="90" width="20" height="72" rx="10" fill="#f1c27d"/>
+              <rect x="136" y="90" width="20" height="72" rx="10" fill="#f1c27d"/>
+              <!-- Ноги и стопы -->
+              <rect x="70" y="168" width="26" height="92" rx="10" fill="#e0ac69"/>
+              <rect x="104" y="168" width="26" height="92" rx="10" fill="#e0ac69"/>
+              <rect x="65" y="254" width="32" height="16" rx="6" fill="#374151"/>
+              <rect x="103" y="254" width="32" height="16" rx="6" fill="#374151"/>
+              <!-- Базовые серые боксеры -->
+              <path d="M68 166 H132 L130 198 H103 L100 185 L97 198 H70 Z" fill="#4b5563"/>
+              <!-- Голова -->
+              <circle cx="100" cy="50" r="30" fill="#f1c27d"/>
+              <!-- Глаза и ухмылка -->
+              <circle cx="89" cy="46" r="3.5" fill="#111827"/>
+              <circle cx="111" cy="46" r="3.5" fill="#111827"/>
+              <path d="M88 61 Q100 68 112 61" stroke="#111827" stroke-width="3" fill="none" stroke-linecap="round"/>
+            </g>
+
+            <!-- ДИНАМИЧЕСКИЕ СЛОИ ШМОТОК НА МАНЕКЕНЕ -->
+            <g id="visual-layer-legs"></g>
+            <g id="visual-layer-body"></g>
+            <g id="visual-layer-acc"></g>
+            <g id="visual-layer-face"></g>
+            <g id="visual-layer-head"></g>
+          </svg>
+        </div>
+
+        <!-- Правые слоты -->
+        <div class="slot-col">
+          <div class="equip-slot" id="slot-box-face" onclick="unequipSlot('face')">
+            <span>👓 Лицо</span>
+            <div class="slot-name" id="slot-name-face">Пусто</div>
+          </div>
+          <div class="equip-slot" id="slot-box-acc" onclick="unequipSlot('acc')">
+            <span>⛓️ Аксессуар</span>
+            <div class="slot-name" id="slot-name-acc">Пусто</div>
+          </div>
+          <div class="equip-slot" onclick="syncWithTelegramBot()" style="border-color:#3b82f6; color:#93c5fd;">
+            <span>📤 В чат</span>
+            <div class="slot-name">Показать перса</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:8px;">
+        Нажми на предмет в <b>Инвентаре</b>, чтобы надеть на манекена. Нажми на слот, чтобы снять.
+      </div>
+    </div>
+
+    <!-- БЫСТРАЯ СТАТА И ИНВЕНТАРЬ ПОД МАНЕКЕНОМ -->
+    <div class="section-h">
+      <span>🎒 Твой Инвентарь (<span id="inv-count">0</span>)</span>
+      <span style="font-size:12px; color:var(--muted);">Все названия 1-в-1 с кейсами</span>
+    </div>
+    <div id="inventory-container" class="inv-grid"></div>
+  </div>
+
+  <!-- ВКЛАДКА 2: КЕЙСЫ С ПРЕВЬЮ И РУЛЕТКОЙ -->
+  <div id="tab-cases" class="tab-view">
+    <div class="section-h">
+      <span>📦 Магазин Кейсов</span>
+      <span style="font-size:12px; color:var(--accent);">Нажми, чтобы глянуть лут</span>
+    </div>
+    <div id="cases-list" class="cases-grid"></div>
+  </div>
+
+  <!-- ВКЛАДКА 3: АПГРЕЙД (10 / 30 / 50 / 75%) -->
+  <div id="tab-upgrade" class="tab-view">
+    <div class="section-h">
+      <span>⚡ Апгрейд Шмоток</span>
+      <span style="font-size:12px; color:var(--muted);">Скам = сгорает, Успех = новый скин</span>
+    </div>
+    <div class="upgrade-arena">
+      <div class="wheel-container">
+        <div class="wheel-pointer" id="upg-pointer"></div>
+        <div class="wheel-ring" id="upg-ring">
+          <div class="wheel-inner">
+            <div style="font-size:24px; font-weight:900; color:var(--green);" id="upg-chance-label">50%</div>
+            <div style="font-size:11px; color:var(--muted);" id="upg-status-text">Выбери предмет</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Слоты: Твой предмет -> Прицел апгрейда -->
+      <div class="upg-slots">
+        <div class="upg-card" id="upg-source-box">
+          <span style="font-size:11px; color:var(--muted);">Твоя шмотка</span>
+          <div id="upg-source-content" style="margin-top:6px; font-size:12px; font-weight:700;">Не выбрана</div>
+        </div>
+        <div style="font-size:20px; font-weight:900; color:var(--accent);">➔</div>
+        <div class="upg-card" id="upg-target-box">
+          <span style="font-size:11px; color:var(--purple);">Что выпадет</span>
+          <div id="upg-target-content" style="margin-top:6px; font-size:12px; font-weight:700;">—</div>
+        </div>
+      </div>
+
+      <!-- Выбор предмета из инвентаря -->
+      <select id="upg-select" class="input-field" onchange="onSelectUpgradeItem()"></select>
+
+      <!-- Кнопки процентов -->
+      <div class="chance-btns">
+        <button class="chance-btn" onclick="setUpgradeChance(10, this)">10%</button>
+        <button class="chance-btn" onclick="setUpgradeChance(30, this)">30%</button>
+        <button class="chance-btn active" onclick="setUpgradeChance(50, this)">50%</button>
+        <button class="chance-btn" onclick="setUpgradeChance(75, this)">75%</button>
+      </div>
+
+      <button class="action-btn" id="btn-run-upgrade" onclick="startUpgradeSpin()">🔥 ЗАПУСТИТЬ АПГРЕЙД</button>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКА 4: ЗАДАНИЯ ХАТЫ (ОПРОСЫ ПРАВДА/ПИЗДЁЖ) -->
+  <div id="tab-tasks" class="tab-view">
+    <div class="section-h">
+      <span>🧹 Дела по Хате (+HC и Аура)</span>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-top:0;">
+      Жми кнопку — бот отправит опрос в ваш общий чат. Когда 1 сожитель подтвердит «Правда», тебе начислятся койны!
+    </p>
+    <div id="tasks-container"></div>
+  </div>
+
+  <!-- ВКЛАДКА 5: АЧИВКИ И ЗАЛ СЛАВЫ -->
+  <div id="tab-achievements" class="tab-view">
+    <div class="section-h">
+      <span>🏆 Достижения Треп Хаты</span>
+    </div>
+    <div id="achievements-container"></div>
+  </div>
+</div>
+
+<!-- НИЖНЕЕ МЕНЮ -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="switchTab('mannequin', this)">
+    <span class="ico">🧍</span><span>Перс и Шмот</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('cases', this)">
+    <span class="ico">📦</span><span>Кейсы</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('upgrade', this)">
+    <span class="ico">⚡</span><span>Апгрейд</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('tasks', this)">
+    <span class="ico">🧹</span><span>Задания</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('achievements', this)">
+    <span class="ico">🏆</span><span>Ачивки</span>
+  </button>
+</nav>
+
+<!-- МОДАЛЬНОЕ ОКНО: ПРЕВЬЮ И ПРОКРУТ КЕЙСА -->
+<div class="modal-overlay" id="case-modal">
+  <div class="modal-box">
+    <h3 id="modal-case-title" style="margin:0 0 4px;">Название кейса</h3>
+    <div id="modal-case-price" style="font-size:12px; color:var(--accent); font-weight:700;">Цена: 10 HC</div>
+
+    <!-- Блок рулетки -->
+    <div class="roller-viewport">
+      <div class="roller-center-line"></div>
+      <div class="roller-track" id="roller-track"></div>
+    </div>
+
+    <div id="case-drop-result" style="min-height:24px; font-weight:800; font-size:13px; color:var(--green); margin-bottom:6px;"></div>
+
+    <div style="text-align:left; font-size:12px; font-weight:700; color:var(--muted);">Содержимое кейса (все модельки совпадают):</div>
+    <div class="loot-preview-grid" id="modal-loot-preview"></div>
+
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button class="action-btn" style="background:#374151;" id="btn-close-case" onclick="closeCaseModal()">Закрыть</button>
+      <button class="action-btn" id="btn-spin-case" onclick="spinCurrentCase()">🎰 КРУТИТЬ КЕЙС</button>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: РЕГИСТРАЦИЯ + ОБУЧЕНИЕ -->
+<div class="modal-overlay" id="onboarding-modal">
+  <div class="modal-box" id="onboarding-content"></div>
+</div>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { tg.expand(); tg.ready(); }
+
+// =========================================================================
+// 1. ЕДИНЫЙ РЕЕСТР ПРЕДМЕТОВ (ОДИНАКОВЫЕ НАЗВАНИЯ, ИКОНКИ И ВИЗУАЛ НА ПЕРСЕ)
+// =========================================================================
+const ITEMS_DB = {
+  "trusy_karasya": {
+    id: "trusy_karasya", name: "Трусы Карася в горошек", slot: "legs", rarity: "common", price: 0.2,
+    iconSvg: `<svg viewBox="0 0 64 64"><path d="M10 16 H54 L50 48 H36 L32 34 L28 48 H14 Z" fill="#ef4444" stroke="#fff" stroke-width="2"/><circle cx="20" cy="26" r="3" fill="#fff"/><circle cx="32" cy="24" r="3" fill="#fff"/><circle cx="44" cy="28" r="3" fill="#fff"/><circle cx="22" cy="38" r="3" fill="#fff"/><circle cx="42" cy="40" r="3" fill="#fff"/></svg>`,
+    mannequinSvg: `<path d="M67 166 H133 L131 204 H103 L100 186 L97 204 H69 Z" fill="#ef4444" stroke="#fff" stroke-width="1.5"/><circle cx="80" cy="178" r="3" fill="#fff"/><circle cx="100" cy="175" r="3" fill="#fff"/><circle cx="118" cy="180" r="3" fill="#fff"/><circle cx="82" cy="192" r="3" fill="#fff"/><circle cx="116" cy="194" r="3" fill="#fff"/>`
+  },
+  "noski_alhana": {
+    id: "noski_alhana", name: "Святые носки Алхана", slot: "legs", rarity: "common", price: 0.3,
+    iconSvg: `<svg viewBox="0 0 64 64"><path d="M22 12 H38 V38 C38 46 48 46 48 52 H22 C18 52 18 44 22 38 Z" fill="#f59e0b" stroke="#fde68a" stroke-width="2"/></svg>`,
+    mannequinSvg: `<rect x="69" y="232" width="28" height="26" rx="4" fill="#f59e0b"/><rect x="103" y="232" width="28" height="26" rx="4" fill="#f59e0b"/><path d="M66 166 H134 L131 215 H103 L100 188 L97 215 H69 Z" fill="#1e293b"/>`
+  },
+  "tapki_kirilla": {
+    id: "tapki_kirilla", name: "Тапки Карлика Джексона", slot: "legs", rarity: "rare", price: 0.8,
+    iconSvg: `<svg viewBox="0 0 64 64"><ellipse cx="22" cy="36" rx="10" ry="18" fill="#8b5cf6" stroke="#fff" stroke-width="2"/><ellipse cx="44" cy="36" rx="10" ry="18" fill="#8b5cf6" stroke="#fff" stroke-width="2"/></svg>`,
+    mannequinSvg: `<path d="M67 166 H133 L130 245 H104 L100 190 L96 245 H70 Z" fill="#1e1b4b"/><rect x="62" y="250" width="36" height="20" rx="8" fill="#8b5cf6" stroke="#ddd6fe" stroke-width="2"/><rect x="102" y="250" width="36" height="20" rx="8" fill="#8b5cf6" stroke="#ddd6fe" stroke-width="2"/>`
+  },
+  "parik_jacksona": {
+    id: "parik_jacksona", name: "Длинный парик прошлого Кирилла", slot: "head", rarity: "common", price: 0.4,
+    iconSvg: `<svg viewBox="0 0 64 64"><path d="M12 48 C10 20 22 10 32 10 C42 10 54 20 52 48 C46 36 44 26 32 26 C20 26 18 36 12 48 Z" fill="#111827" stroke="#9ca3af" stroke-width="2"/></svg>`,
+    mannequinSvg: `<path d="M66 82 C62 32 76 14 100 14 C124 14 138 32 134 82 C127 56 124 34 100 34 C76 34 73 56 66 82 Z" fill="#090d16" stroke="#4b5563" stroke-width="1.5"/>`
+  },
+  "ochki_psa": {
+    id: "ochki_psa", name: "Косые очки Карася", slot: "face", rarity: "rare", price: 1.2,
+    iconSvg: `<svg viewBox="0 0 64 64"><circle cx="20" cy="32" r="11" fill="#111827" stroke="#38bdf8" stroke-width="3"/><circle cx="44" cy="28" r="9" fill="#111827" stroke="#f43f5e" stroke-width="3"/><line x1="31" y1="30" x2="35" y2="29" stroke="#fff" stroke-width="3"/></svg>`,
+    mannequinSvg: `<circle cx="88" cy="46" r="9" fill="#090d16" stroke="#38bdf8" stroke-width="2.5"/><circle cx="112" cy="43" r="7.5" fill="#090d16" stroke="#f43f5e" stroke-width="2.5"/><line x1="97" y1="45" x2="104" y2="44" stroke="#fff" stroke-width="2"/>`
+  },
+  "zub_karasya": {
+    id: "zub_karasya", name: "Золотой сколотый зуб Карася", slot: "face", rarity: "rare", price: 1.8,
+    iconSvg: `<svg viewBox="0 0 64 64"><path d="M18 14 H46 L42 50 L32 38 L22 50 Z" fill="#fbbf24" stroke="#fff" stroke-width="2"/></svg>`,
+    mannequinSvg: `<rect x="86" y="57" width="28" height="9" rx="3" fill="#111827"/><polygon points="92,57 99,57 97,66 92,64" fill="#fbbf24"/><polygon points="101,57 108,57 108,65 103,65" fill="#ffffff"/>`
+  },
+  "mayka_svina": {
+    id: "mayka_svina", name: "Хакерская худи Сани Жиросана", slot: "body", rarity: "rare", price: 1.5,
+    iconSvg: `<svg viewBox="0 0 64 64"><path d="M16 14 L26 10 H38 L48 14 L56 28 L48 34 L44 26 V52 H20 V26 L16 34 L8 28 Z" fill="#10b981" stroke="#047857" stroke-width="2"/><text x="32" y="38" font-size="11" text-anchor="middle" fill="#000" font-weight="bold">AI</text></svg>`,
+    mannequinSvg: `<rect x="63" y="87" width="74" height="85" rx="14" fill="#059669" stroke="#34d399" stroke-width="2"/><rect x="43" y="89" width="21" height="68" rx="9" fill="#059669"/><rect x="136" y="89" width="21" height="68" rx="9" fill="#059669"/><text x="100" y="135" font-size="16" text-anchor="middle" fill="#ecfdf5" font-weight="900">&lt;AI/&gt;</text>`
+  },
+  "jager_puzo": {
+    id: "jager_puzo", name: "Куртка «Укротитель Ягермейстера»", slot: "body", rarity: "epic", price: 3.5,
+    iconSvg: `<svg viewBox="0 0 64 64"><rect x="14" y="12" width="36" height="42" rx="8" fill="#14532d" stroke="#f59e0b" stroke-width="3"/><circle cx="32" cy="32" r="10" fill="#f59e0b"/></svg>`,
+    mannequinSvg: `<rect x="62" y="86" width="76" height="86" rx="14" fill="#14532d" stroke="#f59e0b" stroke-width="2.5"/><rect x="42" y="89" width="22" height="70" rx="10" fill="#14532d"/><rect x="136" y="89" width="22" height="70" rx="10" fill="#14532d"/><circle cx="100" cy="126" r="16" fill="#f59e0b"/><text x="100" y="131" font-size="12" text-anchor="middle" fill="#000" font-weight="900">JÄGER</text>`
+  },
+  "skovoroda_omleta": {
+    id: "skovoroda_omleta", name: "Золотая сковорода с Омлетом Карася", slot: "acc", rarity: "epic", price: 4.5,
+    iconSvg: `<svg viewBox="0 0 64 64"><circle cx="28" cy="28" r="18" fill="#1f2937" stroke="#f59e0b" stroke-width="3"/><circle cx="28" cy="28" r="12" fill="#fef08a"/><circle cx="28" cy="28" r="5" fill="#f97316"/><line x1="41" y1="41" x2="56" y2="56" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/></svg>`,
+    mannequinSvg: `<line x1="146" y1="158" x2="174" y2="122" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/><circle cx="176" cy="115" r="20" fill="#1f2937" stroke="#f59e0b" stroke-width="3"/><circle cx="176" cy="115" r="13" fill="#fef08a"/><circle cx="176" cy="115" r="5" fill="#f97316"/>`
+  },
+  "shlem_sultana": {
+    id: "shlem_sultana", name: "Шлем ебучего султана", slot: "head", rarity: "legendary", price: 10.0,
+    iconSvg: `<svg viewBox="0 0 64 64"><path d="M12 44 C12 20 52 20 52 44 Z" fill="#f59e0b" stroke="#fef08a" stroke-width="2.5"/><circle cx="32" cy="24" r="6" fill="#ef4444"/><path d="M32 8 L36 18 L28 18 Z" fill="#38bdf8"/></svg>`,
+    mannequinSvg: `<path d="M66 42 C66 8 134 8 134 42 Z" fill="#f59e0b" stroke="#fef08a" stroke-width="2.5"/><circle cx="100" cy="24" r="7" fill="#ef4444" stroke="#fff" stroke-width="1.5"/><path d="M100 2 L107 16 L93 16 Z" fill="#38bdf8"/>`
+  },
+  "cep_jacksona": {
+    id: "cep_jacksona", name: "Золотая цепь Карлика Джексона", slot: "acc", rarity: "legendary", price: 10.0,
+    iconSvg: `<svg viewBox="0 0 64 64"><ellipse cx="32" cy="28" rx="18" ry="14" fill="none" stroke="#f59e0b" stroke-width="6"/><circle cx="32" cy="48" r="10" fill="#f59e0b" stroke="#fef08a" stroke-width="2"/><text x="32" y="52" font-size="10" text-anchor="middle" fill="#000" font-weight="900">MJ</text></svg>`,
+    mannequinSvg: `<path d="M78 88 Q100 132 122 88" fill="none" stroke="#f59e0b" stroke-width="6" stroke-linecap="round"/><circle cx="100" cy="122" r="11" fill="#f59e0b" stroke="#fef08a" stroke-width="2"/><text x="100" y="126" font-size="10" text-anchor="middle" fill="#000" font-weight="900">MJ</text>`
+  },
+  "korona_alhana": {
+    id: "korona_alhana", name: "Божественный Нимб Алхана", slot: "head", rarity: "legendary", price: 10.0,
+    iconSvg: `<svg viewBox="0 0 64 64"><polygon points="10,46 16,20 26,34 32,14 38,34 48,20 54,46" fill="#fbbf24" stroke="#fef08a" stroke-width="2"/><ellipse cx="32" cy="10" rx="22" ry="5" fill="none" stroke="#38bdf8" stroke-width="3"/></svg>`,
+    mannequinSvg: `<ellipse cx="100" cy="8" rx="34" ry="7" fill="none" stroke="#38bdf8" stroke-width="4"/><polygon points="72,30 78,12 90,24 100,8 110,24 122,12 128,30" fill="#fbbf24" stroke="#fef08a" stroke-width="2"/>`
+  }
+};
+
+// Сортированный массив предметов по цене для честного апгрейда
+const SORTED_ITEMS = Object.values(ITEMS_DB).sort((a, b) => a.price - b.price);
+
+// =========================================================================
+// 2. БАЗА КЕЙСОВ (СВОИ SVG-МОДЕЛЬКИ И СПИСКИ ЛУТА)
+// =========================================================================
+const CASES_DB = [
+  {
+    id: "case_trash",
+    name: "Пакет из Пятёрочки",
+    sub: "Базовый шмот пацанов",
+    price: 10,
+    svg: `<svg viewBox="0 0 80 80"><rect x="16" y="24" width="48" height="44" rx="8" fill="#374151" stroke="#9ca3af" stroke-width="3"/><path d="M26 24 C26 10 54 10 54 24" fill="none" stroke="#9ca3af" stroke-width="4"/><circle cx="40" cy="46" r="10" fill="#ef4444"/></svg>`,
+    items: ["trusy_karasya", "noski_alhana", "parik_jacksona", "tapki_kirilla", "ochki_psa"]
+  },
+  {
+    id: "case_sharaga",
+    name: "Рюкзак из Шараги",
+    sub: "Средний дроп со смены",
+    price: 25,
+    svg: `<svg viewBox="0 0 80 80"><rect x="18" y="18" width="44" height="50" rx="12" fill="#1d4ed8" stroke="#60a5fa" stroke-width="3"/><rect x="26" y="38" width="28" height="22" rx="6" fill="#1e3a8a" stroke="#93c5fd" stroke-width="2"/><path d="M30 18 C30 8 50 8 50 18" fill="none" stroke="#60a5fa" stroke-width="4"/></svg>`,
+    items: ["tapki_kirilla", "ochki_psa", "mayka_svina", "zub_karasya", "jager_puzo"]
+  },
+  {
+    id: "case_bar",
+    name: "Бар Жиросана и Джексона",
+    sub: "Эпический алко-дроп",
+    price: 50,
+    svg: `<svg viewBox="0 0 80 80"><rect x="14" y="22" width="52" height="44" rx="10" fill="#065f46" stroke="#f59e0b" stroke-width="3"/><circle cx="40" cy="44" r="14" fill="#f59e0b"/><text x="40" y="49" font-size="12" text-anchor="middle" fill="#000" font-weight="900">50</text></svg>`,
+    items: ["mayka_svina", "zub_karasya", "jager_puzo", "skovoroda_omleta", "shlem_sultana"]
+  },
+  {
+    id: "case_alhan",
+    name: "Алтарь Алхана",
+    sub: "Топ легендарки за 10 HC",
+    price: 100,
+    svg: `<svg viewBox="0 0 80 80"><polygon points="40,8 70,26 70,58 40,72 10,58 10,26" fill="#4c1d95" stroke="#fbbf24" stroke-width="3"/><circle cx="40" cy="40" r="15" fill="#fbbf24"/></svg>`,
+    items: ["jager_puzo", "skovoroda_omleta", "shlem_sultana", "cep_jacksona", "korona_alhana"]
+  }
+];
+
+// =========================================================================
+// 3. СПИСОК ЗАДАНИЙ И АЧИВОК (СПЕЦИАЛЬНЫЕ КЕЙСОВЫЕ + ЛОРНЫЕ)
+// =========================================================================
+const TASKS_LIST = [
+  { title: "Приготовил фирменный Омлет Карася 🍳", desc: "Покормил всю хату горячим омлетом", reward: 3, aura: 15 },
+  { title: "Убрался в хате и вынес мусор 🧹", desc: "Навёл порядок без напоминаний", reward: 2, aura: 10 },
+  { title: "Помыл всю гору посуды и плиту 🍽️", desc: "Ни одной грязной тарелки в раковине", reward: 2, aura: 10 },
+  { title: "Купил Ягерь / Виски на вечер 🦌🥃", desc: "Главный спонсор пятничного движа", reward: 5, aura: 25 },
+  { title: "Заработал больше всех за смену 💰", desc: "Принёс максимальный кэш со смены", reward: 4, aura: 20 },
+  { title: "Обоссал Пня и Птицу по фактам 🚫", desc: "Напомнил пацанам, кто тут база, а кто крыса", reward: 1, aura: 15 }
+];
+
+const ACHIEVEMENTS_DB = [
+  { id: "ach_first_case", title: "Первая Доза (Кейс-Ачивка)", desc: "Открыл свой первый кейс в Треп Хате", icon: "📦" },
+  { id: "ach_five_cases", title: "Лудоман Треп Хаты (Кейс-Ачивка)", desc: "Прокрутил 5 кейсов", icon: "🎰" },
+  { id: "ach_legendary", title: "Джекпот Алхана (Кейс-Ачивка)", desc: "Выбил легендарную шмотку ценой 10 HC", icon: "👑" },
+  { id: "ach_upg_win", title: "Алхимик Шмота (Апгрейд-Ачивка)", desc: "Успешно апгрейднул предмет", icon: "⚡" },
+  { id: "ach_upg_burn", title: "Ебучий Мамонт (Апгрейд-Ачивка)", desc: "Сжёг свой скин при неудачном апгрейде", icon: "🔥" },
+  { id: "ach_full_set", title: "Фулл Дрип Манекен", desc: "Одел манекена сразу в 3+ шмотки", icon: "🕺" }
+];
+
+// =========================================================================
+// 4. СОСТОЯНИЕ ИГРОКА (НАЧАЛЬНЫЙ БАЛАНС РОВНО 5.0 HC)
+// =========================================================================
+let state = {
+  registered: false,
+  nickname: "",
+  role: "Саня Жиросан",
+  hc: 5.0,
+  aura: 10,
+  inventory: ["trusy_karasya"], // 1 стартовая шмотка для теста апгрейда и манекена
+  equipped: { head: null, face: null, body: null, legs: "trusy_karasya", acc: null },
+  stats: { casesOpened: 0, upgradesWon: 0, upgradesBurned: 0 },
+  achievements: []
+};
+
+function loadState() {
+  const saved = localStorage.getItem("trep_hata_v2_state");
+  if (saved) {
+    try { state = Object.assign(state, JSON.parse(saved)); } catch(e) {}
+  }
+  if (!state.registered) {
+    showRegistrationModal();
+  }
+  updateAllUI();
+}
+
+function saveState() {
+  localStorage.setItem("trep_hata_v2_state", JSON.stringify(state));
+}
+
+function getRankName(hc, aura) {
+  if (hc < 0) return "💩 Ебучий лох (В минусе)";
+  const score = hc + aura * 0.5;
+  if (score < 8) return "🤡 Дух Треп Хаты";
+  if (score < 20) return "🧹 Младший по тарелочкам";
+  if (score < 45) return "🍺 Смотрящий за холодильником";
+  if (score < 90) return "👑 Авторитет Треп Хаты";
+  return "⚡ Наместник Алхана";
+}
+
+// =========================================================================
+// 5. РЕГИСТРАЦИЯ И ПОШАГОВОЕ ОБУЧЕНИЕ
+// =========================================================================
+let selectedRegRole = "Саня Жиросан 🐗";
+
+function showRegistrationModal() {
+  const modal = document.getElementById("onboarding-modal");
+  const box = document.getElementById("onboarding-content");
+  modal.classList.add("show");
+
+  const tgName = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "";
+
+  box.innerHTML = `
+    <h2 style="margin:0 0 6px; color:var(--accent);">🏠 РЕГИСТРАЦИЯ В ТРЕП ХАТЕ</h2>
+    <p style="font-size:12px; color:var(--muted); margin:0 0 10px;">
+      Придумай себе блатной ник и выбери, кто ты в хате. На старте выдаём ровно <b>5.0 HC</b> и первые трусы Карася!
+    </p>
+    <input type="text" id="reg-nick-input" class="input-field" placeholder="Введи свой ник (напр. Жиросан 3000)" value="${tgName}">
+    <div style="text-align:left; font-size:12px; font-weight:700; margin-top:6px;">Выбери своего бойца:</div>
+    <div class="role-selector">
+      <div class="role-opt selected" onclick="selectRole(this, 'Саня Жиросан 🐗')">
+        <b>🐗 Саня (Свин / Жиросан)</b><br><span style="color:var(--muted);">Кодер, фанат ИИ и Ягеря, учится во 2 смену</span>
+      </div>
+      <div class="role-opt" onclick="selectRole(this, 'Карась 🐟')">
+        <b>🐟 Карась (Охотник на самок)</b><br><span style="color:var(--muted);">Шеф-повар омлета, выходные Ср/Сб/Вс</span>
+      </div>
+      <div class="role-opt" onclick="selectRole(this, 'Карлик Джексон 🕺')">
+        <b>🕺 Кирилл Умный (Карлик Джексон)</b><br><span style="color:var(--muted);">Ценитель виски, Майкла Джексона и порядка</span>
+      </div>
+    </div>
+    <button class="action-btn" onclick="completeRegistration()">🚀 ЗАРЕГАТЬСЯ И ПРОЙТИ ОБУЧЕНИЕ</button>
+  `;
+}
+
+function selectRole(el, roleName) {
+  document.querySelectorAll(".role-opt").forEach(o => o.classList.remove("selected"));
+  el.classList.add("selected");
+  selectedRegRole = roleName;
+}
+
+function completeRegistration() {
+  const nickInput = document.getElementById("reg-nick-input").value.trim();
+  state.nickname = nickInput || selectedRegRole.split(" ")[0];
+  state.role = selectedRegRole;
+  state.hc = 5.0; // Ровно 5 HC по ТЗ!
+  state.registered = true;
+  saveState();
+  updateAllUI();
+  openTutorial(0);
+}
+
+const TUTORIAL_SLIDES = [
+  {
+    title: "🎓 Шаг 1/4: Твой Личный Манекен",
+    text: "У каждого из вас теперь <b>свой личный манекен</b>! Любая шмотка, которую ты выбьешь из кейса или скрафтишь в апгрейде, имеет собственную 2D-модельку и реально отображается на твоём персе, когда ты её надеваешь."
+  },
+  {
+    title: "📦 Шаг 2/4: Кейсы и Честный Дроп",
+    text: "В магазине 4 кейса (от 10 до 100 HC). Перед тем как крутить любой кейс, ты видишь <b>весь список предметов внутри</b>. Названия и картинки в кейсе, на рулетке и в твоём инвентаре совпадают на 100%."
+  },
+  {
+    title: "⚡ Шаг 3/4: Апгрейд 10 / 30 / 50 / 75%",
+    text: "Хочешь поднять дешёвые трусы до Короны Алхана за 10 HC? Закидывай предмет в <b>Апгрейд</b> и выбирай шанс! Если стрелка остановится в зелёной зоне — старый скин пропадёт и появится новый. Если мимо — скин сгорает навсегда!"
+  },
+  {
+    title: "⚖️ Шаг 4/4: Опросы в чате и Воскресный Суд",
+    text: "Зарабатывай по <b>1–5 HC</b> на делах по хате (омлет, уборка, покупка бухла). Жми задание — бот кинет опрос в ваш чат. 1 голос «Правда» от соседа = получаешь HC и Ауру. Голос «Пиздёж» = штраф в минус. Кто закончит неделю в минусе — крутит барабан наказаний!"
+  }
+];
+
+function openTutorial(step = 0) {
+  const modal = document.getElementById("onboarding-modal");
+  const box = document.getElementById("onboarding-content");
+  modal.classList.add("show");
+  const s = TUTORIAL_SLIDES[step];
+  const isLast = step === TUTORIAL_SLIDES.length - 1;
+
+  box.innerHTML = `
+    <h3 style="color:var(--accent); margin-top:0;">${s.title}</h3>
+    <p style="font-size:13px; line-height:1.5; color:#e5e7eb;">${s.text}</p>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      ${step > 0 ? `<button class="action-btn" style="background:#374151;" onclick="openTutorial(${step - 1})">⬅ Назад</button>` : ""}
+      <button class="action-btn" onclick="${isLast ? 'closeTutorial()' : `openTutorial(${step + 1})`}">
+        ${isLast ? "🔥 ПОГНАЛИ В ТРЕП ХАТУ!" : "Дальше ➔"}
+      </button>
+    </div>
+  `;
+}
+
+function closeTutorial() {
+  document.getElementById("onboarding-modal").classList.remove("show");
+}
+
+// =========================================================================
+// 6. ОТРИСОВКА МАНЕКЕНА И ИНВЕНТАРЯ
+// =========================================================================
+function renderMannequin() {
+  const slots = ["head", "face", "body", "legs", "acc"];
+  let equippedCount = 0;
+
+  slots.forEach(slot => {
+    const layer = document.getElementById(`visual-layer-${slot}`);
+    const slotBox = document.getElementById(`slot-box-${slot}`);
+    const slotName = document.getElementById(`slot-name-${slot}`);
+    const itemId = state.equipped[slot];
+
+    if (itemId && ITEMS_DB[itemId]) {
+      const item = ITEMS_DB[itemId];
+      layer.innerHTML = item.mannequinSvg;
+      slotBox.classList.add("equipped");
+      slotName.innerText = item.name;
+      equippedCount++;
+    } else {
+      layer.innerHTML = "";
+      slotBox.classList.remove("equipped");
+      slotName.innerText = "Пусто";
+    }
+  });
+
+  if (equippedCount >= 3) unlockAchievement("ach_full_set");
+}
+
+function equipItem(itemId) {
+  const item = ITEMS_DB[itemId];
+  if (!item) return;
+  state.equipped[item.slot] = itemId;
+  saveState();
+  updateAllUI();
+}
+
+function unequipSlot(slot) {
+  if (!state.equipped[slot]) return;
+  state.equipped[slot] = null;
+  saveState();
+  updateAllUI();
+}
+
+function sellItem(invIndex) {
+  const itemId = state.inventory[invIndex];
+  const item = ITEMS_DB[itemId];
+  if (!item) return;
+
+  // Если эта вещь надета и больше такой в инвентаре нет — снимаем с манекена
+  state.inventory.splice(invIndex, 1);
+  if (state.equipped[item.slot] === itemId && !state.inventory.includes(itemId)) {
+    state.equipped[item.slot] = null;
+  }
+  state.hc = Math.round((state.hc + item.price) * 10) / 10;
+  saveState();
+  updateAllUI();
+}
+
+function renderInventory() {
+  const container = document.getElementById("inventory-container");
+  document.getElementById("inv-count").innerText = state.inventory.length;
+
+  if (state.inventory.length === 0) {
+    container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--muted); padding:20px;">Инвентарь пуст. Открой кейс или выполни задание!</div>`;
+    return;
+  }
+
+  container.innerHTML = state.inventory.map((itemId, idx) => {
+    const item = ITEMS_DB[itemId];
+    if (!item) return "";
+    const isEquipped = state.equipped[item.slot] === itemId;
+    return `
+      <div class="item-card rarity-${item.rarity}">
+        ${item.iconSvg}
+        <div class="item-name">${item.name}</div>
+        <div class="item-meta">Слот: ${item.slot.toUpperCase()} • ${item.price} HC</div>
+        <div class="item-actions">
+          <button class="btn-sm btn-equip" onclick="equipItem('${item.id}')">
+            ${isEquipped ? "✅ Надето" : "👕 Надеть"}
+          </button>
+          <button class="btn-sm btn-sell" onclick="sellItem(${idx})">
+            Продать +${item.price}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// =========================================================================
+// 7. КЕЙСЫ С ПРЕДПРОСМОТРОМ И CS:GO АНИМАЦИЕЙ
+// =========================================================================
+let activeCaseObj = null;
+let isCaseSpinning = false;
+
+function renderCases() {
+  const box = document.getElementById("cases-list");
+  box.innerHTML = CASES_DB.map(c => `
+    <div class="case-card" onclick="openCaseModal('${c.id}')">
+      <div class="case-svg-box">${c.svg}</div>
+      <div class="case-title">${c.name}</div>
+      <div class="case-sub">${c.sub}</div>
+      <div class="case-price-btn">Открыть за ${c.price} HC</div>
+    </div>
+  `).join("");
+}
+
+function openCaseModal(caseId) {
+  activeCaseObj = CASES_DB.find(c => c.id === caseId);
+  if (!activeCaseObj) return;
+
+  document.getElementById("modal-case-title").innerText = activeCaseObj.name;
+  document.getElementById("modal-case-price").innerText = `Стоимость открытия: ${activeCaseObj.price} HC`;
+  document.getElementById("case-drop-result").innerText = "";
+
+  // Заполняем превью всех предметов внутри кейса
+  const previewBox = document.getElementById("modal-loot-preview");
+  previewBox.innerHTML = activeCaseObj.items.map(id => {
+    const it = ITEMS_DB[id];
+    return `
+      <div class="loot-preview-item">
+        ${it.iconSvg}
+        <b style="text-align:center;">${it.name}</b>
+        <span style="color:var(--accent);">${it.price} HC</span>
+      </div>
+    `;
+  }).join("");
+
+  // Стартовая лента рулетки
+  const track = document.getElementById("roller-track");
+  track.style.transition = "none";
+  track.style.transform = "translateX(0px)";
+  track.innerHTML = activeCaseObj.items.map(id => {
+    const it = ITEMS_DB[id];
+    return `<div class="roller-card">${it.iconSvg}<span>${it.name}</span></div>`;
+  }).join("");
+
+  document.getElementById("case-modal").classList.add("show");
+}
+
+function closeCaseModal() {
+  if (isCaseSpinning) return;
+  document.getElementById("case-modal").classList.remove("show");
+}
+
+function spinCurrentCase() {
+  if (isCaseSpinning || !activeCaseObj) return;
+  if (state.hc < activeCaseObj.price) {
+    alert(`Не хватает ХатаКойнов! Нужно ${activeCaseObj.price} HC, а у тебя ${state.hc.toFixed(1)} HC. Выполни квест в разделе «Задания»!`);
+    return;
+  }
+
+  isCaseSpinning = true;
+  state.hc = Math.round((state.hc - activeCaseObj.price) * 10) / 10;
+  updateAllUI();
+
+  document.getElementById("btn-spin-case").disabled = true;
+  document.getElementById("btn-close-case").disabled = true;
+  document.getElementById("case-drop-result").innerText = "Крутим барабан...";
+
+  const pool = activeCaseObj.items;
+  const winItemId = pool[Math.floor(Math.random() * pool.length)];
+  const winItem = ITEMS_DB[winItemId];
+
+  // Генерируем ленту из 40 карточек, победный предмет ставим на позицию 32
+  const WIN_INDEX = 32;
+  let cardsHtml = "";
+  for (let i = 0; i < 40; i++) {
+    const id = (i === WIN_INDEX) ? winItemId : pool[Math.floor(Math.random() * pool.length)];
+    const it = ITEMS_DB[id];
+    cardsHtml += `<div class="roller-card">${it.iconSvg}<span style="overflow:hidden;max-height:22px;">${it.name}</span></div>`;
+  }
+
+  const track = document.getElementById("roller-track");
+  track.style.transition = "none";
+  track.style.transform = "translateX(0px)";
+  track.innerHTML = cardsHtml;
+
+  // Вычисляем сдвиг до центра карточки №32 (ширина карточки с отступами = 94px)
+  const viewportWidth = document.querySelector(".roller-viewport").clientWidth;
+  const cardFullWidth = 94;
+  const jitter = Math.floor(Math.random() * 40) - 20;
+  const targetOffset = (WIN_INDEX * cardFullWidth) - (viewportWidth / 2) + (cardFullWidth / 2) + jitter;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      track.style.transition = "transform 3.6s cubic-bezier(0.1, 0.85, 0.15, 1)";
+      track.style.transform = `translateX(-${targetOffset}px)`;
+    });
+  });
+
+  setTimeout(() => {
+    state.inventory.push(winItemId);
+    state.stats.casesOpened++;
+    unlockAchievement("ach_first_case");
+    if (state.stats.casesOpened >= 5) unlockAchievement("ach_five_cases");
+    if (winItem.price >= 10) unlockAchievement("ach_legendary");
+
+    saveState();
+    updateAllUI();
+
+    document.getElementById("case-drop-result").innerText = `🎉 ВЫПАЛО: ${winItem.name} (${winItem.price} HC)! Добавлено в инвентарь!`;
+    document.getElementById("btn-spin-case").disabled = false;
+    document.getElementById("btn-close-case").disabled = false;
+    isCaseSpinning = false;
+  }, 3700);
+}
+
+// =========================================================================
+// 8. АПГРЕЙД С АНИМАЦИЕЙ КОЛЕСА И СГОРАНИЕМ / ЗАМЕНОЙ СКИНА
+// =========================================================================
+let selectedUpgChance = 50;
+let isUpgrading = false;
+let wheelRotation = 0;
+
+function getUpgradeTargetItem(sourceId, chance) {
+  const src = ITEMS_DB[sourceId];
+  if (!src) return null;
+  const multiplier = chance === 10 ? 5.0 : chance === 30 ? 2.5 : chance === 50 ? 1.8 : 1.3;
+  const desiredPrice = src.price * multiplier;
+
+  // Ищем предмет дороже текущего, ближайший к целевой цене
+  const candidates = SORTED_ITEMS.filter(i => i.price > src.price);
+  if (candidates.length === 0) return SORTED_ITEMS[SORTED_ITEMS.length - 1];
+
+  let best = candidates[0];
+  for (const c of candidates) {
+    if (Math.abs(c.price - desiredPrice) < Math.abs(best.price - desiredPrice)) {
+      best = c;
+    }
+  }
+  return best;
+}
+
+function setUpgradeChance(chance, btnEl) {
+  if (isUpgrading) return;
+  selectedUpgChance = chance;
+  document.querySelectorAll(".chance-btn").forEach(b => b.classList.remove("active"));
+  if (btnEl) btnEl.classList.add("active");
+
+  document.getElementById("upg-chance-label").innerText = `${chance}%`;
+  document.getElementById("upg-ring").style.background = `conic-gradient(var(--green) 0% ${chance}%, #27272a ${chance}% 100%)`;
+  onSelectUpgradeItem();
+}
+
+function renderUpgradeSelector() {
+  const sel = document.getElementById("upg-select");
+  if (state.inventory.length === 0) {
+    sel.innerHTML = `<option value="">В инвентаре нет предметов</option>`;
+    document.getElementById("upg-source-content").innerHTML = "Пусто";
+    document.getElementById("upg-target-content").innerHTML = "—";
+    return;
+  }
+
+  sel.innerHTML = state.inventory.map((id, idx) => {
+    const it = ITEMS_DB[id];
+    return `<option value="${idx}">${it.name} (${it.price} HC)</option>`;
+  }).join("");
+  onSelectUpgradeItem();
+}
+
+function onSelectUpgradeItem() {
+  const sel = document.getElementById("upg-select");
+  const idx = parseInt(sel.value, 10);
+  if (isNaN(idx) || !state.inventory[idx]) return;
+
+  const sourceId = state.inventory[idx];
+  const srcItem = ITEMS_DB[sourceId];
+  const targetItem = getUpgradeTargetItem(sourceId, selectedUpgChance);
+
+  document.getElementById("upg-source-content").innerHTML = `${srcItem.iconSvg}<div>${srcItem.name}</div><span style="color:var(--muted);font-size:10px;">${srcItem.price} HC</span>`;
+  document.getElementById("upg-target-content").innerHTML = `${targetItem.iconSvg}<div>${targetItem.name}</div><span style="color:var(--accent);font-size:10px;">${targetItem.price} HC</span>`;
+}
+
+function startUpgradeSpin() {
+  if (isUpgrading) return;
+  const sel = document.getElementById("upg-select");
+  const invIdx = parseInt(sel.value, 10);
+  if (isNaN(invIdx) || !state.inventory[invIdx]) {
+    alert("Сначала выбей шмотку из кейса!");
+    return;
+  }
+
+  isUpgrading = true;
+  document.getElementById("btn-run-upgrade").disabled = true;
+  document.getElementById("upg-status-text").innerText = "Крутим...";
+
+  const sourceId = state.inventory[invIdx];
+  const srcItem = ITEMS_DB[sourceId];
+  const targetItem = getUpgradeTargetItem(sourceId, selectedUpgChance);
+
+  // Честный рандом 0..100
+  const roll = Math.random() * 100;
+  const isWin = roll <= selectedUpgChance;
+
+  // Вычисляем угол остановки стрелки (зелёный сектор от 0 до chance * 3.6 градусов)
+  const winMaxAngle = selectedUpgChance * 3.6;
+  let stopAngle;
+  if (isWin) {
+    stopAngle = Math.random() * (winMaxAngle - 8) + 4;
+  } else {
+    stopAngle = winMaxAngle + 8 + Math.random() * (360 - winMaxAngle - 16);
+  }
+
+  wheelRotation += (360 * 5) + (360 - (wheelRotation % 360)) + stopAngle;
+  const pointer = document.getElementById("upg-pointer");
+  pointer.style.transform = `translateX(-50%) rotate(${wheelRotation}deg)`;
+
+  setTimeout(() => {
+    // Удаляем старый предмет из инвентаря в любом случае!
+    state.inventory.splice(invIdx, 1);
+    if (state.equipped[srcItem.slot] === sourceId && !state.inventory.includes(sourceId)) {
+      state.equipped[srcItem.slot] = null;
+    }
+
+    if (isWin) {
+      state.inventory.push(targetItem.id);
+      state.stats.upgradesWon++;
+      unlockAchievement("ach_upg_win");
+      if (targetItem.price >= 10) unlockAchievement("ach_legendary");
+      document.getElementById("upg-status-text").innerHTML = `<span style="color:var(--green);">УСПЕХ! +${targetItem.name}</span>`;
+    } else {
+      state.stats.upgradesBurned++;
+      unlockAchievement("ach_upg_burn");
+      document.getElementById("upg-status-text").innerHTML = `<span style="color:var(--red);">СКАМ! Скин сгорел!</span>`;
+    }
+
+    saveState();
+    updateAllUI();
+    document.getElementById("btn-run-upgrade").disabled = false;
+    isUpgrading = false;
+  }, 3300);
+}
+
+// =========================================================================
+// 9. ЗАДАНИЯ, АЧИВКИ И СИНХРОНИЗАЦИЯ С БОТОМ
+// =========================================================================
+function renderTasks() {
+  const box = document.getElementById("tasks-container");
+  box.innerHTML = TASKS_LIST.map((t, i) => `
+    <div class="task-item">
+      <div class="task-info">
+        <h4>${t.title}</h4>
+        <p>${t.desc} • ✨ +${t.aura} Ауры</p>
+      </div>
+      <button class="task-reward-btn" onclick="submitTaskToChat(${i})">+${t.reward} HC</button>
+    </div>
+  `).join("");
+}
+
+function submitTaskToChat(taskIdx) {
+  const t = TASKS_LIST[taskIdx];
+  // Начисляем локально + отправляем опрос в Telegram-чат через WebApp API
+  state.hc = Math.round((state.hc + t.reward) * 10) / 10;
+  state.aura += t.aura;
+  saveState();
+  updateAllUI();
+
+  if (tg && tg.sendData) {
+    tg.sendData(JSON.stringify({
+      action: "create_task_poll",
+      title: t.title,
+      reward: t.reward,
+      aura: t.aura
+    }));
+  } else {
+    alert(`Задание «${t.title}» засчитано (+${t.reward} HC, +${t.aura} Ауры)! В чате также используй /claim для голосования пацанов.`);
+  }
+}
+
+function syncWithTelegramBot() {
+  const outfitNames = {};
+  ["head", "face", "body", "legs", "acc"].forEach(s => {
+    const id = state.equipped[s];
+    outfitNames[s] = id && ITEMS_DB[id] ? ITEMS_DB[id].name : "Нет";
+  });
+
+  if (tg && tg.sendData) {
+    tg.sendData(JSON.stringify({
+      action: "sync_profile",
+      nickname: state.nickname,
+      role: state.role,
+      hc: state.hc,
+      aura: state.aura,
+      outfit: outfitNames
+    }));
+  } else {
+    alert("Открой приложение через кнопку в Telegram, чтобы выгрузить манекена в общий чат!");
+  }
+}
+
+function unlockAchievement(achId) {
+  if (!state.achievements.includes(achId)) {
+    state.achievements.push(achId);
+    saveState();
+  }
+}
+
+function renderAchievements() {
+  const box = document.getElementById("achievements-container");
+  box.innerHTML = ACHIEVEMENTS_DB.map(a => {
+    const unlocked = state.achievements.includes(a.id);
+    return `
+      <div class="ach-card ${unlocked ? 'unlocked' : ''}">
+        <div class="ach-icon">${a.icon}</div>
+        <div>
+          <div style="font-weight:800; font-size:13px;">${a.title} ${unlocked ? '✅' : '🔒'}</div>
+          <div style="font-size:11px; color:var(--muted);">${a.desc}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function switchTab(tabId, btnEl) {
+  document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+  document.getElementById(`tab-${tabId}`).classList.add("active");
+  if (btnEl) btnEl.classList.add("active");
+}
+
+function updateAllUI() {
+  document.getElementById("ui-nick").innerText = state.nickname || "Не зареган";
+  document.getElementById("ui-role").innerText = state.role;
+  document.getElementById("ui-hc").innerText = state.hc.toFixed(1);
+  document.getElementById("ui-aura").innerText = state.aura;
+  document.getElementById("ui-rank").innerText = getRankName(state.hc, state.aura);
+
+  const hcPill = document.getElementById("hc-pill");
+  if (state.hc < 0) hcPill.classList.add("negative");
+  else hcPill.classList.remove("negative");
+
+  renderMannequin();
+  renderInventory();
+  renderCases();
+  renderUpgradeSelector();
+  renderTasks();
+  renderAchievements();
+}
+
+loadState();
+</script>
 </body>
 </html>
