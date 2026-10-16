@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ТРЕП ХАТА v3.0 PRO</title>
+<title>ТРЕП ХАТА v3.5 ULTIMATE</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
@@ -61,7 +61,6 @@
   .bal-aura { background: rgba(139, 92, 246, 0.2); border: 1px solid var(--purple); color: #e9d5ff; }
   .bal-aura.opush { background: rgba(239, 68, 68, 0.25); border-color: var(--red); color: #fecaca; }
 
-  /* ПОЛОСКА БАФФОВ / ДЕБАФФОВ ОТ АУРЫ */
   .aura-buff-bar {
     margin-top: 8px; padding: 6px 10px; border-radius: 10px;
     background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b;
@@ -112,7 +111,7 @@
   .mannequin-canvas { width: 176px; height: 265px; position: relative; margin: 0 auto; }
   .mannequin-canvas svg { width: 100%; height: 100%; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.75)); }
 
-  /* ФИЛЬТРЫ ИНВЕНТАРЯ И СЕТКА ПРЕДМЕТОВ */
+  /* ФИЛЬТРЫ ИНВЕНТАРЯ */
   .filter-bar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 8px; }
   .filter-chip {
     background: var(--card); border: 1px solid var(--border); color: var(--muted);
@@ -140,7 +139,7 @@
   .btn-wear.worn { background: var(--green); }
   .btn-sell { background: rgba(239,68,68,0.18); color: #fca5a5; border: 1px solid #ef4444; }
 
-  /* РУЛЕТКИ (ЕЖЕДНЕВНАЯ И ЕЖЕНЕДЕЛЬНАЯ) */
+  /* РУЛЕТКИ */
   .roulette-banner {
     background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
     border: 1px solid #4f46e5; border-radius: 18px; padding: 12px; margin-bottom: 12px;
@@ -167,7 +166,7 @@
     font-weight: 900; font-size: 12px; padding: 6px 12px; border-radius: 10px; display: inline-block; margin-top: 6px;
   }
 
-  /* АПГРЕЙД С РАДАРОМ */
+  /* АПГРЕЙД */
   .upg-panel {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 20px; padding: 14px; text-align: center;
@@ -205,7 +204,7 @@
   }
   .ch-btn.active { background: var(--purple); border-color: #c4b5fd; box-shadow: 0 0 12px rgba(139,92,246,0.45); }
 
-  /* ЗАДАНИЯ, КАСТОМНЫЙ ОЦЕНЩИК И ПИН-КОД */
+  /* ЗАДАНИЯ И БУХГАЛТЕРИЯ */
   .card-block {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 16px; padding: 12px; margin-bottom: 10px;
@@ -231,7 +230,6 @@
     border-radius: 10px; font-weight: 800; font-size: 11px; white-space: nowrap; cursor: pointer;
   }
 
-  /* КАЛЬКУЛЯТОР ХАТЫ, ТОПЫ И АЧИВКИ */
   .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .stat-tile { background: #090d16; border: 1px solid #263147; border-radius: 12px; padding: 10px; text-align: center; }
   .ach-item {
@@ -240,7 +238,7 @@
   }
   .ach-item.done { opacity: 1; border-color: var(--gold); background: rgba(245, 158, 11, 0.08); }
 
-  /* НИЖНЯЯ НАВИГАЦИЯ (6 ВКЛАДОК) */
+  /* НИЖНЯЯ НАВИГАЦИЯ НА 6 РАЗДЕЛОВ */
   .bottom-bar {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: rgba(7, 9, 14, 0.96); border-top: 1px solid var(--border);
@@ -307,7 +305,7 @@
         <div class="aura-line" id="hdr-aura-rank">😐 Серый Пассажир</div>
       </div>
       <div class="balances-box">
-        <div class="bal-pill bal-aura" id="pill-aura">✨ <span id="hdr-aura">0</span></div>
+        <div class="bal-pill bal-aura" id="pill-aura">✨ <span id="hdr-aura">10</span></div>
         <div class="bal-pill bal-hc" id="pill-hc">💰 <span id="hdr-hc">5.0</span> HC</div>
       </div>
     </div>
@@ -317,7 +315,7 @@
     </div>
   </header>
 
-  <!-- ВКЛАДКА 1: ЛИЧНЫЙ МАНЕКЕН И ИНВЕНТАРЬ -->
+  <!-- ВКЛАДКА 1: МАНЕКЕН И ИНВЕНТАРЬ -->
   <section id="page-mannequin" class="tab-page active">
     <div class="stage-card" id="mannequin-stage-card">
       <div class="stage-top-actions">
@@ -326,7 +324,6 @@
       </div>
 
       <div class="stage-grid">
-        <!-- Левая колонка слотов (Голова, Торс, Ноги) -->
         <div class="slots-column">
           <div class="slot-cell" id="slot-cell-head" onclick="unequipSlot('head')">
             <div class="slot-lbl">🎩 Голова</div>
@@ -342,7 +339,6 @@
           </div>
         </div>
 
-        <!-- ЦЕНТРАЛЬНЫЙ ВЕКТОРНЫЙ МАНЕКЕН -->
         <div class="mannequin-canvas">
           <svg viewBox="0 0 200 310" id="mannequin-svg">
             <defs>
@@ -351,14 +347,9 @@
                 <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
               </radialGradient>
             </defs>
-            <!-- Подиум -->
             <ellipse cx="100" cy="286" rx="72" ry="15" fill="url(#stageGlow)"/>
             <ellipse cx="100" cy="286" rx="54" ry="8" fill="none" stroke="#a855f7" stroke-width="2"/>
-
-            <!-- Задний слой (Хвост Карася / Плащи / Троны) -->
             <g id="layer-back"></g>
-
-            <!-- Базовое тело перса -->
             <g id="layer-base-human">
               <rect x="91" y="76" width="18" height="16" rx="5" fill="#e0ac69"/>
               <rect x="65" y="88" width="70" height="84" rx="16" fill="#f1c27d"/>
@@ -374,20 +365,16 @@
               <circle cx="111" cy="46" r="3.5" fill="#0f172a"/>
               <path d="M88 61 Q100 68 112 61" stroke="#0f172a" stroke-width="3" fill="none" stroke-linecap="round"/>
             </g>
-
-            <!-- Слои экипировки (визуализация каждой вещи на манекене) -->
             <g id="layer-feet"></g>
             <g id="layer-legs"></g>
             <g id="layer-body"></g>
             <g id="layer-acc"></g>
             <g id="layer-face"></g>
             <g id="layer-head"></g>
-            <!-- Слой мух и позора, если Аура < 0 (Опущенный) -->
             <g id="layer-opush"></g>
           </svg>
         </div>
 
-        <!-- Правая колонка слотов (Лицо, Обувь, Аксессуар/Хвост) -->
         <div class="slots-column">
           <div class="slot-cell" id="slot-cell-face" onclick="unequipSlot('face')">
             <div class="slot-lbl">👓 Лицо / Маска</div>
@@ -405,10 +392,11 @@
       </div>
     </div>
 
-    <!-- ИНВЕНТАРЬ -->
     <div class="sec-title">
       <span>🎒 Инвентарь (<span id="inv-counter">0</span>)</span>
-      <span class="sub-hint">База: 55+ предметов</span>
+      <div style="display:flex; gap:6px;">
+        <button class="sound-btn" style="padding:4px 8px; font-size:11px;" onclick="sellAllDuplicates()">Продать дубликаты</button>
+      </div>
     </div>
     <div class="filter-bar">
       <button class="filter-chip active" onclick="filterInventory('all', this)">Все</button>
@@ -430,20 +418,20 @@
       <div class="roulette-cards">
         <div class="r-card">
           <div style="font-weight:900; font-size:13px;">☀️ Ежедневная</div>
-          <div style="font-size:10px; color:var(--muted); margin:4px 0;">Ультра-дроп (0.15%):<br><b style="color:#38bdf8;">Перчатка Билли Джин (25 HC)</b></div>
-          <button class="btn-main" id="btn-daily-spin" style="padding:8px; font-size:12px;" onclick="openFreeRoulette('daily')">Крутить (Бесплатно)</button>
+          <div style="font-size:10px; color:var(--muted); margin:4px 0;" id="daily-timer-lbl">Проверка...</div>
+          <button class="btn-main" id="btn-daily-spin" style="padding:8px; font-size:12px;" onclick="openFreeRoulette('daily')">Крутить</button>
         </div>
         <div class="r-card weekly">
           <div style="font-weight:900; font-size:13px; color:var(--gold);">👑 Еженедельная</div>
-          <div style="font-size:10px; color:var(--muted); margin:4px 0;">Ультра-дроп (0.15%):<br><b style="color:var(--gold);">Золотой Трон Алхана (50 HC)</b></div>
-          <button class="btn-main gold" id="btn-weekly-spin" style="padding:8px; font-size:12px;" onclick="openFreeRoulette('weekly')">Крутить (Раз в 7 дн.)</button>
+          <div style="font-size:10px; color:var(--muted); margin:4px 0;" id="weekly-timer-lbl">Проверка...</div>
+          <button class="btn-main gold" id="btn-weekly-spin" style="padding:8px; font-size:12px;" onclick="openFreeRoulette('weekly')">Крутить</button>
         </div>
       </div>
     </div>
 
     <div class="sec-title">
       <span>📦 Кейсы Треп Хаты (Шмот + Койны)</span>
-      <span class="sub-hint" id="case-discount-hint">Цены с учётом твоей Ауры</span>
+      <span class="sub-hint" id="case-discount-hint">Цены с учётом Ауры</span>
     </div>
     <div id="cases-grid-box" class="cases-grid"></div>
   </section>
@@ -483,23 +471,22 @@
     </div>
   </section>
 
-  <!-- ВКЛАДКА 4: ЗАДАНИЯ (С ОПРОСОМ ВО ВСЕ ЧАТЫ НА 2 ГОЛОСА) -->
+  <!-- ВКЛАДКА 4: ЗАДАНИЯ И ПИН-КОДЫ -->
   <section id="page-tasks" class="tab-page">
     <div class="card-block" style="border-color:var(--gold);">
-      <div style="font-weight:900; font-size:14px; color:var(--gold);">🔑 Ввести Пин-код подтверждения из чата</div>
+      <div style="font-weight:900; font-size:14px; color:var(--gold);">🔑 Ввести защищённый Пин-код из чата</div>
       <div style="font-size:11px; color:var(--muted); margin-top:2px;">
-        Койны НЕ выдаются просто так! Когда 2 соседа нажмут «Правда» в чате, бот выдаст код или начислит баланс.
+        Когда 2 соседа нажмут «Правда» в чате, бот выдаст Пин-код (напр. <code>HATA-35-15-X9A2-7</code>). Введи его сюда для получения честной награды!
       </div>
       <div style="display:flex; gap:6px; margin-top:6px;">
-        <input type="text" id="claim-code-inp" class="inp" style="margin:0;" placeholder="Код из чата (напр. HATA-7X9P2)">
+        <input type="text" id="claim-code-inp" class="inp" style="margin:0;" placeholder="HATA-XX-XX-XXXX-X">
         <button class="btn-main gold" style="width:auto; padding:0 16px;" onclick="redeemClaimCode()">Активировать</button>
       </div>
     </div>
 
-    <!-- СОЗДАТЬ СВОЁ КАСТОМНОЕ ЗАДАНИЕ (АВТО-ОЦЕНКА ЦЕНЫ) -->
     <div class="card-block">
       <div style="font-weight:900; font-size:14px;">✍️ Придумать своё задание (ИИ-оценщик цены)</div>
-      <input type="text" id="custom-task-inp" class="inp" placeholder="Напр: Забашлял за бухло и помыл плиту" oninput="liveEstimateCustomTask()">
+      <input type="text" id="custom-task-inp" class="inp" placeholder="Напр: Сгонял за шавухой и вынес мусор" oninput="liveEstimateCustomTask()">
       <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; margin-bottom:8px;">
         <span>Оценка системы:</span>
         <b id="custom-task-est" style="color:var(--green);">+1.5 HC и +8 Ауры</b>
@@ -509,12 +496,12 @@
 
     <div class="sec-title">
       <span>🧹 Быстрые бытовые дела</span>
-      <span class="sub-hint">Проверка: 2 голоса в чате</span>
+      <span class="sub-hint">Опрос во все чаты (2 голоса)</span>
     </div>
     <div id="preset-tasks-box"></div>
   </section>
 
-  <!-- ВКЛАДКА 5: ПОЛЕЗНЫЙ БЫТ И КАЛЬКУЛЯТОР КВАРТИРЫ (ДЛЯ КИРИЛЛА И ПАЦАНОВ) -->
+  <!-- ВКЛАДКА 5: БУХГАЛТЕРИЯ И АРЕНДА -->
   <section id="page-utility" class="tab-page">
     <div class="sec-title">
       <span>🧮 Бухгалтерия Треп Хаты (20к аренда / 32к старт)</span>
@@ -532,7 +519,7 @@
       </div>
 
       <div style="font-weight:900; font-size:13px; margin-top:12px;">➕ Записать общий чек (Еда / ЖКХ / Бухло)</div>
-      <input type="text" id="exp-title-inp" class="inp" placeholder="Что купил? (напр. Продукты на омлет и хлеб)">
+      <input type="text" id="exp-title-inp" class="inp" placeholder="Что купил? (напр. Продукты на омлет)">
       <div style="display:flex; gap:6px;">
         <input type="number" id="exp-amount-inp" class="inp" placeholder="Сумма в ₽ (напр. 1500)">
         <select id="exp-payer-inp" class="inp" style="width:140px;">
@@ -541,21 +528,12 @@
           <option value="Кирилл">Кирилл</option>
         </select>
       </div>
-      <button class="btn-main" onclick="addSharedExpense()">Записать чек и разделить на троих</button>
+      <button class="btn-main" onclick="addSharedExpense()">Записать чек и отправить в чат</button>
       <div id="expenses-summary-box" style="margin-top:10px; font-size:12px;"></div>
-    </div>
-
-    <div class="card-block">
-      <div style="font-weight:900; font-size:14px; margin-bottom:6px;">📅 График смен и дежурств по шараге</div>
-      <div style="font-size:11px; color:#cbd5e1; line-height:1.45;">
-        • <b>Саня (учёба 14:30–19:45, вых Вс):</b> Свободен утром 08:00–13:30 (утренний быт/работа).<br>
-        • <b>Карась (учёба 08:00–14:30, вых Ср, Сб, Вс):</b> Главный по кухне и омлету в Среду и Субботу.<br>
-        • <b>Кирилл Умный (учёба 08:00–14:30, вых Вс):</b> Вечерний контроль после 15:00 и учёт казны.
-      </div>
     </div>
   </section>
 
-  <!-- ВКЛАДКА 6: ТОПЫ ХАТЫ И 100+ АЧИВОК -->
+  <!-- ВКЛАДКА 6: ТОПЫ И 105+ АЧИВОК -->
   <section id="page-tops" class="tab-page">
     <div class="sec-title">
       <span>🏆 Рейтинг Хаты (По Койнам и Ауре)</span>
@@ -570,7 +548,7 @@
   </section>
 </div>
 
-<!-- НИЖНЕЕ МЕНЮ НА 6 РАЗДЕЛОВ -->
+<!-- НИЖНЕЕ МЕНЮ -->
 <nav class="bottom-bar">
   <button class="nav-btn active" onclick="openTab('mannequin', this)"><span class="ic">🧍</span><span>Перс</span></button>
   <button class="nav-btn" onclick="openTab('cases', this)"><span class="ic">🎰</span><span>Кейсы</span></button>
@@ -580,7 +558,7 @@
   <button class="nav-btn" onclick="openTab('tops', this)"><span class="ic">🏆</span><span>Топ/100+</span></button>
 </nav>
 
-<!-- МОДАЛЬНОЕ ОКНО КЕЙСА / РУЛЕТКИ -->
+<!-- МОДАЛКА КЕЙСА -->
 <div class="modal-bg" id="modal-case">
   <div class="modal-win">
     <h3 id="m-case-name" style="margin:0 0 4px;">Кейс</h3>
@@ -593,7 +571,7 @@
 
     <div id="m-drop-msg" style="min-height:22px; font-weight:900; font-size:13px; color:var(--green); margin-bottom:6px;"></div>
 
-    <div style="text-align:left; font-size:11px; color:var(--muted); font-weight:800;">Что внутри (названия и модельки 1-в-1):</div>
+    <div style="text-align:left; font-size:11px; color:var(--muted); font-weight:800;">Что внутри:</div>
     <div class="preview-grid" id="m-loot-grid"></div>
 
     <div style="display:flex; gap:8px; margin-top:10px;">
@@ -603,7 +581,7 @@
   </div>
 </div>
 
-<!-- МОДАЛЬНОЕ ОКНО РЕГИСТРАЦИИ И ОБУЧЕНИЯ -->
+<!-- МОДАЛКА РЕГИСТРАЦИИ -->
 <div class="modal-bg" id="modal-onboard">
   <div class="modal-win" id="onboard-box"></div>
 </div>
